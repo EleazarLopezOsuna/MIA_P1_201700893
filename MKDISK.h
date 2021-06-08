@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "objetos.h"
+#include <fstream>
 using namespace std;
 
 class MKDISK{
@@ -30,7 +31,7 @@ public:
 	MKDISK();
 	//Funciones
 	char* getRutaRaid(char *path);
-	int obtenerSize(int diskSize);
+    int obtenerSize();
 	objetos::MBR crearMBR(int size);
 	//Metodos
 	void setSize(int size);
@@ -41,3 +42,4 @@ public:
 	void crearDisco(char *path, int tipo);
 	void mostrarDatos(MKDISK *disco);
 };
+#endif

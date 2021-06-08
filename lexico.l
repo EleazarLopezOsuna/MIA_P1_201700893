@@ -25,8 +25,8 @@ comentarios [#]+.*
 caracter "\'"("\\")?({letra}|{entero})"\'"
 cadena [\"][^\"\n]*[\"\n]
 ru "/"{identificador}
-ruta {ru}+"."{identificador}
 ruta_carpeta {ru}+
+ruta {ru}+"."{identificador}
 path ^(\/[^\/ ]*)+\/?$
 name2 {identificador}"."{identificador}
 

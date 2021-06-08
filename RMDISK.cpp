@@ -1,7 +1,7 @@
 #include "RMDISK.h"
 using namespace std;
 RMDISK::RMDISK(){
-	memeset(ruta, 0, 255);
+    memset(ruta, 0, 255);
 	f_ruta = false;
 }
 void RMDISK::setRuta(char *path){
@@ -9,12 +9,12 @@ void RMDISK::setRuta(char *path){
 	f_ruta = true;
 }
 void RMDISK::limpiar(){
-	memeset(ruta, 0, 255);
+    memset(ruta, 0, 255);
 	f_ruta = false;
 }
 void RMDISK::ejecutar(){
 	FILE *file = fopen(ruta, "rb");
-	char respuesta;
+    char respuesta[1];
 	while(true){
 		if(file != NULL){
 			cout << "Desea eliminar el disco: " << ruta << "?" << endl;

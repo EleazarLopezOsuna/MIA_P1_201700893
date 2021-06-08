@@ -55,7 +55,7 @@ public:
 		int f_rep;
 		int f_nombre;
 		int f_path;
-		int f_id
+                int f_id;
 	};
 	struct mountedPart{
 		char status;

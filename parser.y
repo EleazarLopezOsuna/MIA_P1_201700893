@@ -194,39 +194,40 @@ char TEXT [256];
 %token<TEXT> ruta_carpeta;
 %token<TEXT> pass;
 %token<TEXT> rutacualquiera;
-%type<TEXT> PAUSE;
-%type<TEXT> COMANDOCHGRP;
-%type<TEXT> COMANDOREP;
-%type<TEXT> REPORTES;
-%type<TEXT> COMANDOCHMOD;
-%type<TEXT> RMUSR;
-%type<TEXT> RMGRP;
-%type<TEXT> COMANDOMKUSR;
-%type<TEXT> MKGRP;
-%type<TEXT> COMANDOLOGIN;
-%type<TEXT> COMANDOMKFS;
-%type<TEXT> SISTEMA_FORMATEO;
+//%type<TEXT> PAUSE;
+//%type<TEXT> COMANDOCHGRP;
+//%type<TEXT> COMANDOREP;
+//%type<TEXT> REPORTES;
+//%type<TEXT> COMANDOCHMOD;
+//%type<TEXT> RMUSR;
+//%type<TEXT> RMGRP;
+//%type<TEXT> COMANDOMKUSR;
+//%type<TEXT> MKGRP;
+//%type<TEXT> COMANDOLOGIN;
+//%type<TEXT> COMANDOMKFS;
+//%type<TEXT> SISTEMA_FORMATEO;
 %type<TEXT> COMANDOMKDISK; // lista de instrucciones
-%type<TEXT>COMANDOCHOWN;
-%type<TEXT>COMANDOMV;
-%type<busca>COMANDOFIND;
-%type<TEXT>COMANDOCP;
-%type<TEXT>COMANDOMKDIR;
-%type<TEXT>COMANDOREN;
-%type<TEXT>COMANDOEDIT;
-%type<TEXT>PASS;
-%type<TEXT>COMANDOMKFILE;
-%type<TEXT>COMANDOFDISK;
-%type<TEXT>COMANDOMOUNT;
+//%type<TEXT>COMANDOCHOWN;
+//%type<TEXT>COMANDOMV;
+//%type<busca>COMANDOFIND;
+//%type<TEXT>COMANDOCP;
+//%type<TEXT>COMANDOMKDIR;
+//%type<TEXT>COMANDOREN;
+//%type<TEXT>COMANDOEDIT;
+//%type<TEXT>PASS;
+//%type<TEXT>COMANDOMKFILE;
+//%type<TEXT>COMANDOFDISK;
+//%type<TEXT>COMANDOMOUNT;
 %type<TEXT>RUTA_CADENA;
 %type<TEXT>AJUSTE1;
-%type<TEXT>AJUSTE2;
-%type<TEXT>TIPO_PARTICION;
-%type<TEXT>TIPO_BORRADO;
-%type<TEXT>NAME;
+//%type<TEXT>AJUSTE2;
+//%type<TEXT>TIPO_PARTICION;
+//%type<TEXT>TIPO_BORRADO;
+//%type<TEXT>NAME;
 %type<TEXT>UNIDADES1;
-%type<TEXT>UNIDADES2;
-%type<TEXT>NAME_REPS;
+//%type<TEXT>UNIDADES2;
+//%type<TEXT>NAME_REPS;
+%type<TEXT>COMENTS;
 %left suma menos
 %left multi division
 %left potencia
@@ -235,7 +236,7 @@ char TEXT [256];
 INICIO : MKDISK { }
     | RMDISK{}
     | COMENTS{}
-    | FDISK{}
+    /*| FDISK{}
     | MOUNT{}
     | UNMOUNT{}
     | MKFS{}
@@ -259,13 +260,13 @@ INICIO : MKDISK { }
     | CHGRP{}
     | REPORTES{}
     | EXEC{}
-    | PAUSE{}
+    | PAUSE{}*/
 ;
 MKDISK:  pmkdisk COMANDOMKDISK
     {
-        disco->ejecutar_mkdisk();
+        disco->ejecutar();
         disco->limpiar();
-        disco = new obmkdisk();
+        disco = new MKDISK();
     }
 ;
 COMANDOMKDISK: menos psize igual entero COMANDOMKDISK
@@ -342,13 +343,15 @@ RUTA_CADENA: ruta
 ;
 RMDISK:  prmdisk menos ppath igual RUTA_CADENA
     {
-        obrmdisk* eliminar=new obrmdisk();
+        RMDISK* eliminar=new RMDISK();
         eliminar->setRuta($5);
-        eliminar->eliminar_mrdisk();
+        eliminar->ejecutar();
         eliminar->limpiar();
     }
 ;
-FDISK:  pfdisk COMANDOFDISK
+COMENTS: coment{}
+;
+/*FDISK:  pfdisk COMANDOFDISK
     {
         if(administrado->par_nombre == true && administrado->par_path){
             //hay que verificar que tipo de operacion de fdisk es
@@ -636,8 +639,6 @@ PAUSE: ppause
         char l;
         cin>>l;
     }
-;
-COMENTS: coment{}
 ;
 COMANDOREP: menos pname igual NAME_REPS COMANDOREP
         {
@@ -1052,4 +1053,4 @@ TIPO_BORRADO: pfast
         {
             memcpy($$, "2", 1);
         }
-;
+;*/

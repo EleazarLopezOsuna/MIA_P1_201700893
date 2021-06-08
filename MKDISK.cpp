@@ -32,13 +32,12 @@ void MKDISK::limpiar(){
 	memset(extension, 0 , 10);
 }
 void MKDISK::ejecutar(){
-	FILE *file = fopen(ruta, "r");
+    FILE *file = fopen(ruta, "r");
 	if(file != NULL){
 		printf("Error: el disco ya existe \n");
-		fclose(archivo);
+        fclose(file);
 	}else{
-		getRuta(ruta);
-		strcpy(ruta_raid, getRutaRaid(ruta));
+        getRuta(ruta);
 		if(strcmp(extension, "dk") == 0){
 			DIR* nuevoDirectorio = opendir(ruta_disco);
 			if(nuevoDirectorio){
@@ -54,18 +53,19 @@ void MKDISK::ejecutar(){
 				}
 			}
 		}else{
-			cout << "Error: la extension del disco no es soportada, se esperaba MK" << endl;
+            cout << "Error: la extension del disco no es soportada, se esperaba DK" << endl;
 
 		}
-	}
+    }
 }
 void MKDISK::getRuta(char *path){
-	int i = 0;
-	char character;
+    int i = 0;
+    char character[2] = {0};
+    memset(character, 0, 2);
 	char temp_path[500] = {0};
 	memset(temp_path, 0, 500);
 	while(path[i] != 0){
-		character = path[i];
+        character[0] = path[i];
 		if(strcmp(character, "/") == 0){
 			strcat(temp_path, "/");
 			strcat(ruta_disco, temp_path);
@@ -78,62 +78,35 @@ void MKDISK::getRuta(char *path){
 			strcat(temp_path, character);
 		}
 		i++;
-	}
-	strcpy(extension, temp_path);
-}
-char* MKDISK::getRutaRaid(char *path){
-	char *ruta = (char*) malloc(sizeof (char)*500);
-    memset(ruta, 0, 500);
-    int i=0;
-    char character;
-    char temp_path[500] = {0};
-    memset(temp_path, 0, 500);
-    while(path[i] != 0)
-    {
-        caracter = path[i];
-        if(strcmp(caracter,"/") == 0)
-        {
-            strcat(ruta, temp_path);
-             strcat(ruta, "/");
-            memset(temp_path, 0, 500);
-        }else if(strcmp(caracter,".") == 0){
-            strcat(temp_path, "_raid");
-            strcat(ruta, temp_path);
-            memset(temp_path, 0, 500);
-        }else{
-            strcat(temp_path,caracter);
-        }
-        i++;
     }
-    strcat(ruta,".");
-    strcat(ruta, temp_path);
-    return ruta;
+    strcpy(extension, temp_path);
 }
 void MKDISK::crearDisco(char *path, int tipo){
 	objetos::MBR mbr;
-	FIle *file = fopen(path, "wb+");
-	if(file == NULL){
-		cout << "Error: el disco no pudo ser creado" << endl;
-	}else{
-		fseek(file, 0, SEEK_SET);
-		objetos::content llenado;
-		int sizeI = size;
-		if(u != 0){
-			sizeI *= 1024;
-		}
-		for(int i = 0; i < sizeI; i++){
-			for(int j = 0; j < 1024; j++){
-				llenado.contenido[j] = '\0';
-			}
-			fwrite(&llenado, sizeof(objetos::content), 1, file)
-		}
-		fseek(file, 0, SEEK_SET);
-		mbr = crearMBR(obtenerSize());
-		fwrite(&mbr, sizeof(objetos::MBR), 1, file);
-	}
-	fclose(file);
+    ofstream mf(path);
+    FILE *file = fopen(path, "wb+");
+    if(file == NULL){
+
+    }else{
+        fseek(file, 0, SEEK_SET);
+        objetos::content llenado;
+        int sizeI = size;
+        if(u != 0){
+            sizeI *= 1024;
+        }
+        for(int i = 0; i < sizeI; i++){
+            for(int j = 0; j < 1024; j++){
+                llenado.contenido[j] = '\0';
+            }
+            fwrite(&llenado, sizeof(objetos::content), 1, file);
+        }
+        fseek(file, 0, SEEK_SET);
+        mbr = crearMBR(obtenerSize());
+        fwrite(&mbr, sizeof(objetos::MBR), 1, file);
+        fclose(file);
+    }
 }
-void MKDISK::obtenerSize(){
+int MKDISK::obtenerSize(){
 	int retorno = 0;
 	if(u == 1){
 		retorno = size * size * 1024;
@@ -142,6 +115,7 @@ void MKDISK::obtenerSize(){
 	}else{
 		retorno = size * size * 1024;
 	}
+    return retorno;
 }
 objetos::MBR MKDISK::crearMBR(int mbrSize){
 	objetos::MBR newMBR;
@@ -157,7 +131,7 @@ objetos::MBR MKDISK::crearMBR(int mbrSize){
 		particion.part_fit = 'F';
 		particion.part_start = -1;
 		particion.part_size = -1;
-		newMBR.mbr_partitions = particion;
+        newMBR.mbr_partitions[i] = particion;
 	}
 	return newMBR;
 }
@@ -170,5 +144,5 @@ void MKDISK::mostrarDatos(MKDISK *disco){
 	cout << "Path: " << disco->path << endl;
 	disco->ejecutar();
 	disco->limpiar();
-	disco = new obmkdisk();
+    disco = new MKDISK();
 }

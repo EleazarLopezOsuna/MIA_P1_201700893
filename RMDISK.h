@@ -11,11 +11,11 @@ public:
 	string path = "";
 	char ruta[255];
 	bool f_ruta;
-	//Constructor
-	MKDISK();
+    //Constructor
+    RMDISK();
 	//Metodos
 	void setRuta(char * ruta);
 	void limpiar();
 	void ejecutar();
 };
-#endif;
+#endif
