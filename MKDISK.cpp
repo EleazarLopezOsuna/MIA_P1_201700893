@@ -132,6 +132,9 @@ objetos::MBR MKDISK::crearMBR(int mbrSize){
 		particion.part_fit = 'F';
 		particion.part_start = -1;
 		particion.part_size = -1;
+        for(int i =0; i<16; i++){
+            particion.part_name[i] = '\0';
+        }
         newMBR.mbr_partitions[i] = particion;
 	}
 	return newMBR;

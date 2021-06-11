@@ -17,7 +17,7 @@ public:
 	string u, f, name;
 	int size, type, fit, unit, borrar, add, size_add, operacion;
 	char path[255];
-	char nombre[255];
+    char nombre[16];
 	bool f_nombre, f_path;
 	//Metodos
 	void infoDisco(FDISK *disco);

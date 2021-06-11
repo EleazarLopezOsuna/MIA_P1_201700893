@@ -69,20 +69,20 @@ void FDISK::nuevaParticion(objetos::MBR mbr, int size_p){
             if(mbr.mbr_partitions[i].part_type == 'P'){
 				f_primaria++;
             }else if(mbr.mbr_partitions[i].part_type == 'E'){
-				f_extendida++;
-			}
-            if(strcpy(mbr.mbr_partitions[i].part_name, nombre) == 0){
-				f_nombre++;
-			}
-		}
-	}
+                f_extendida = i;
+            }
+            if(strcmp(mbr.mbr_partitions[i].part_name, nombre) == 0){
+                f_nombre++;
+            }
+        }
+    }
 	if(type == 1 && f_extendida != -1){
 		cout << "Error, ya existe una particion extendida" << endl;
 		return;
     }else if(type == 2 && f_extendida == -1){
 		cout << "Error, no existe una particion extendida" << endl;
 		return;
-	}else if(type == 2){
+    }else if(type == 2){
 		crearLogica(mbr, size_p, f_extendida);
 	}else{
 		int start = sizeof(objetos::MBR);
@@ -312,19 +312,19 @@ void FDISK::crearLogica(objetos::MBR mbr, int size_p, int pos){
 	int extendida = inicio_part + total;
 	int disponible = total - sizeof(objetos::EBR);
 	int necesario = disponible - size_p;
-	int logica = 0;
+    int logica = 0;
 	FILE *file = fopen(path, "rb+");
 	fseek(file, inicio_part, SEEK_SET);
-	fread(&ebr, sizeof(objetos::EBR), 1, file);
+    fread(&ebr, sizeof(objetos::EBR), 1, file);
     if(total > size_p){
 		if(sizeof(objetos::EBR) > size_p){
             cout << "Error, no hay espacio suficiente" << endl;
 		}else{
 			objetos::EBR tmp = ebr;
-			objetos::EBR next;
+            objetos::EBR next;
 			if(no_existe_logica(ebr, mbr) == 0){
-				logica = 0;
-				while(logica != 1){
+                logica = 0;
+                while(logica != 1){
 					fseek(file, inicio_part, SEEK_SET);
 					fread(&tmp, sizeof(objetos::EBR), 1, file);
 					if(tmp.part_status == '0' && tmp.part_next == -1){
@@ -358,9 +358,11 @@ void FDISK::crearLogica(objetos::MBR mbr, int size_p, int pos){
 					}
 					inicio_part = tmp.part_next;
 				}
-			}
+            }else{
+                cout << "Error, no se pudo crear la particion logica, ya existe una particion con ese nombre" << endl;
+            }
 		}
-	}
+    }
 	fclose(file);
 }
 int FDISK::no_existe_logica(objetos::EBR ebr, objetos::MBR mbr){
@@ -371,10 +373,10 @@ int FDISK::no_existe_logica(objetos::EBR ebr, objetos::MBR mbr){
 			break;
 		}
 	}
-	objetos::EBR tmp = ebr;
+    objetos::EBR tmp = ebr;
 	objetos::EBR next;
 	FILE *file = fopen(path, "rb+");
-	while(tmp.part_next != -1){
+    while(tmp.part_next != -1){
 		if(strcmp(nombre, tmp.part_name) == 0){
 			flag = 1;
 			break;
