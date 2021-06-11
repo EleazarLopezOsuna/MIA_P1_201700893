@@ -110,11 +110,11 @@ void MKDISK::crearDisco(char *path, int tipo){
 int MKDISK::obtenerSize(){
 	int retorno = 0;
 	if(u == 1){
-		retorno = size * size * 1024;
+        retorno = size * 1024 * 1024;
 	}else if(u == 0){
 		retorno = size * 1024;
 	}else{
-		retorno = size * size * 1024;
+        retorno = size * 1024 * 1024;
 	}
     return retorno;
 }

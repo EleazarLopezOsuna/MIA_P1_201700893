@@ -6,8 +6,8 @@
 #include <iostream>
 #include "MKDISK.h"
 #include "RMDISK.h"
-//#include "obfdisk.h"
-//#include "mount.h"
+#include "FDISK.h"
+#include "MOUNT.h"
 //#include "unmount.h"
 //#include "mkfs.h"
 //#include "login.h"
@@ -39,9 +39,9 @@ extern int columna; //columna actual donde se encuentra el parser (analisis lexi
 extern char *yytext; //lexema actual donde esta el parser (analisis lexico) lo maneja BISON
 MKDISK *disco=new MKDISK();
 RMDISK *eliminar=new RMDISK();
-//obfdisk *administrado=new obfdisk();
-//mount * montaje=new mount(1);
-//mount * desmontaje=new mount(2);
+FDISK *administrado=new FDISK();
+MOUNT * montaje = new MOUNT(1);
+MOUNT * desmontaje = new MOUNT(2);
 //unmount * desmontar=new unmount();
 //mkfs * formateo=new mkfs();
 //login * entrar=new login();
@@ -65,7 +65,7 @@ RMDISK *eliminar=new RMDISK();
 //ppause * pausa=new ppause();
 //Estructuras::REP nuevo_reporte;
 //reportes * reporte = new reportes();
-//particioneslist::lista*lista;
+lista::list *listx;
 //Estructuras::user_activo * activo;
 
 /*void setSalida(particioneslist::lista * l_general , Estructuras::user_activo * user){
@@ -216,16 +216,16 @@ char TEXT [256];
 //%type<TEXT>COMANDOEDIT;
 //%type<TEXT>PASS;
 //%type<TEXT>COMANDOMKFILE;
-//%type<TEXT>COMANDOFDISK;
-//%type<TEXT>COMANDOMOUNT;
+%type<TEXT>COMANDOFDISK;
+%type<TEXT>COMANDOMOUNT;
 %type<TEXT>RUTA_CADENA;
 %type<TEXT>AJUSTE1;
-//%type<TEXT>AJUSTE2;
-//%type<TEXT>TIPO_PARTICION;
-//%type<TEXT>TIPO_BORRADO;
-//%type<TEXT>NAME;
+%type<TEXT>AJUSTE2;
+%type<TEXT>TIPO_PARTICION;
+%type<TEXT>TIPO_BORRADO;
+%type<TEXT>NAME;
 %type<TEXT>UNIDADES1;
-//%type<TEXT>UNIDADES2;
+%type<TEXT>UNIDADES2;
 //%type<TEXT>NAME_REPS;
 %type<TEXT>COMENTS;
 %left suma menos
@@ -236,10 +236,10 @@ char TEXT [256];
 INICIO : MKDISK { }
     | RMDISK{}
     | COMENTS{}
-    /*| FDISK{}
+    | FDISK{}
     | MOUNT{}
     | UNMOUNT{}
-    | MKFS{}
+    /*| MKFS{}
     | LOGIN{}
     | LOGOUT{}
     | MKGRP{}
@@ -351,21 +351,21 @@ RMDISK:  prmdisk menos ppath igual RUTA_CADENA
 ;
 COMENTS: coment{}
 ;
-/*FDISK:  pfdisk COMANDOFDISK
+FDISK:  pfdisk COMANDOFDISK
     {
-        if(administrado->par_nombre == true && administrado->par_path){
+        if(administrado->f_nombre == true && administrado->f_path){
             //hay que verificar que tipo de operacion de fdisk es
             if(administrado->borrar !=0 && administrado->add == 0 && administrado->size ==NULL){
                 administrado->operacion=1;
-                administrado->ejecutar_fdisk(lista);
+                administrado->ejecutar(listx);
                 administrado->limpiar();
             }else if(administrado->add == 1 && administrado->borrar== 0 && administrado->size == NULL){
                 administrado->operacion=2;
-                administrado->ejecutar_fdisk(lista);
+                administrado->ejecutar(listx);
                 administrado->limpiar();
             }else if(administrado->size != NULL && administrado->add == 0 && administrado->borrar==0){
                 administrado->operacion=0;
-                administrado->ejecutar_fdisk(lista);
+                administrado->ejecutar(listx);
                 administrado->limpiar();
             }
             administrado->limpiar();
@@ -374,27 +374,163 @@ COMENTS: coment{}
         }
     }
 ;
+COMANDOFDISK: menos psize igual entero COMANDOFDISK
+        {
+            int tam=atoi($4);
+            administrado->size=tam;
+        }
+    | menos pf igual AJUSTE2 COMANDOFDISK
+        {
+            int valor = atoi($4);
+            administrado->fit =valor;
+        }
+    | menos pu igual UNIDADES2 COMANDOFDISK
+        {
+            int unidad=atoi($4);
+            administrado->unit=unidad;
+        }
+    | menos ppath igual RUTA_CADENA COMANDOFDISK
+        {
+            administrado->setRuta($4);
+            administrado->f_path=true;
+        }
+    | menos ptype igual TIPO_PARTICION COMANDOFDISK
+        {
+            int valor=atoi($4);
+            administrado->type=valor;
+        }
+    | menos pdelete igual TIPO_BORRADO COMANDOFDISK
+        {
+            int val = atoi($4);
+            administrado->borrar=val;
+        }
+    | menos padd igual entero COMANDOFDISK
+        {
+            int val = atoi($4);
+            administrado->add=1;
+            administrado->size_add=val;
+        }
+    | menos pname igual NAME COMANDOFDISK
+        {
+            administrado->setName($4);
+            administrado->f_nombre = true;
+        }
+    | {}
+;
+NAME : cadena
+        {
+            int s = strlen($1);
+            char nombre [s];
+            int j=0;
+            memset(nombre,'\0',s+1);
+            for(int i=0;i<s;i++){
+                if($1[i]=='\"'){
+
+                }else{
+                    nombre[j] = $1[i];
+                    j++;
+                }
+            }
+            memcpy($$, nombre, strlen(nombre)+1);
+        }
+    | identificador
+        {
+            int s = strlen($1);
+            char nombre [s];
+            int j=0;
+            memset(nombre,'\0',s+1);
+            for(int i=0;i<s;i++){
+                if($1[i]=='\"'){
+
+                }else{
+                    nombre[j] = $1[i];
+                    j++;
+                }
+            }
+            memcpy($$, nombre, strlen(nombre)+1);
+        }
+;
+AJUSTE2: pbf
+        {
+            memcpy($$, "0", 1);
+        }
+    |   pff
+        {
+            memcpy($$, "1", 1);
+        }
+    |   pwf
+        {
+            memcpy($$, "2", 1);
+        }
+;
+UNIDADES2: pk
+        {
+            memcpy($$, "1", 1);
+        }
+    | pm
+        {
+            memcpy($$, "2", 1);
+        }
+    | pb
+        {
+            memcpy($$, "0", 1);
+        }
+;
+TIPO_PARTICION: pp
+        {
+            memcpy($$, "0", 1);
+        }
+    | pe
+        {
+            memcpy($$, "1", 1);
+        }
+    | pl
+        {
+            memcpy($$, "2", 1);
+        }
+;
+TIPO_BORRADO: pfast
+        {
+            memcpy($$, "1", 1);
+        }
+    | pfull
+        {
+            memcpy($$, "2", 1);
+        }
+;
 MOUNT: pmount COMANDOMOUNT
     {
-        if(montaje->p_name == true && montaje->p_path == true){
-            montaje->ejecutar_MOUNT(montaje->st_mount, lista);
-            montaje->limpiar_mount();
+        if(montaje->f_name == true && montaje->f_path == true){
+            montaje->ejecutarM(montaje->obj_mount, listx);
+            montaje->limpiar_m();
         }else{
             std::cout<<"Error, no se cumplen con los parametros -> MOUNT"<<std::endl;
         }
     }
 ;
+COMANDOMOUNT: menos ppath igual RUTA_CADENA COMANDOMOUNT
+        {
+            strcpy(montaje->obj_mount.path, $4);
+            montaje->f_path = true;
+        }
+    | menos pname igual identificador COMANDOMOUNT
+        {
+            strcpy(montaje->obj_mount.name, $4);
+            montaje->f_name = true;
+        }
+    | {}
+;
 UNMOUNT: punmount menos pid igual identificador
     {
-        if(lista->primero== NULL){
+        if(listx == NULL){
             std::cout<<"La lista esta vacia"<<std::endl;
         }
-        strcpy(desmontaje->st_unmount.id, $5);
-        desmontaje->ejecutar_UNMOUNT(lista, desmontaje->st_unmount);
-        desmontaje->limpiar_Unmount();
+        strcpy(desmontaje->obj_unmount.id, $5);
+        desmontaje->ejecutarU(listx, desmontaje->obj_unmount);
+        desmontaje->limpiar_u();
     }
 ;
-MKFS: pmkfs COMANDOMKFS
+/*MKFS: pmkfs COMANDOMKFS
     {
         if(formateo->par_id == true){
             formateo->ejecutar_MKFS(lista);
@@ -918,139 +1054,4 @@ SISTEMA_FORMATEO: p2fs
             formateo->ext3 = true;
         }
 ;
-COMANDOMOUNT: menos ppath igual RUTA_CADENA COMANDOMOUNT
-        {
-            strcpy(montaje->st_mount.path, $4);
-            montaje->p_path = true;
-        }
-    | menos pname igual identificador COMANDOMOUNT
-        {
-            strcpy(montaje->st_mount.name, $4);
-            montaje->p_name = true;
-        }
-    | {}
-;
-COMANDOFDISK: menos psize igual entero COMANDOFDISK
-        {
-            int tam=atoi($4);
-            administrado->size=tam;
-        }
-    | menos pf igual AJUSTE2 COMANDOFDISK
-        {
-            int valor = atoi($4);
-            administrado->fit =valor;
-        }
-    | menos pu igual UNIDADES2 COMANDOFDISK
-        {
-            int unidad=atoi($4);
-            administrado->unit=unidad;
-        }
-    | menos ppath igual RUTA_CADENA COMANDOFDISK
-        {
-            administrado->setRuta($4);
-            administrado->par_path=true;
-        }
-    | menos ptype igual TIPO_PARTICION COMANDOFDISK
-        {
-            int valor=atoi($4);
-            administrado->type=valor;
-        }
-    | menos pdelete igual TIPO_BORRADO COMANDOFDISK
-        {
-            int val = atoi($4);
-            administrado->borrar=val;
-        }
-    | menos padd igual entero COMANDOFDISK
-        {
-            int val = atoi($4);
-            administrado->add=1;
-            administrado->size_add=val;
-        }
-    | menos pname igual NAME COMANDOFDISK
-        {
-            administrado->setName($4);
-            administrado->par_nombre = true;
-        }
-    | {}
-;
-NAME : cadena
-        {
-            int s = strlen($1);
-            char nombre [s];
-            int j=0;
-            memset(nombre,'\0',s+1);
-            for(int i=0;i<s;i++){
-                if($1[i]=='\"'){
-
-                }else{
-                    nombre[j] = $1[i];
-                    j++;
-                }
-            }
-            memcpy($$, nombre, strlen(nombre)+1);
-        }
-    | identificador
-        {
-            int s = strlen($1);
-            char nombre [s];
-            int j=0;
-            memset(nombre,'\0',s+1);
-            for(int i=0;i<s;i++){
-                if($1[i]=='\"'){
-
-                }else{
-                    nombre[j] = $1[i];
-                    j++;
-                }
-            }
-            memcpy($$, nombre, strlen(nombre)+1);
-        }
-;
-AJUSTE2: pbf
-        {
-            memcpy($$, "0", 1);
-        }
-    |   pff
-        {
-            memcpy($$, "1", 1);
-        }
-    |   pwf
-        {
-            memcpy($$, "2", 1);
-        }
-;
-UNIDADES2: pk
-        {
-            memcpy($$, "1", 1);
-        }
-    | pm
-        {
-            memcpy($$, "2", 1);
-        }
-    | pb
-        {
-            memcpy($$, "0", 1);
-        }
-;
-TIPO_PARTICION: pp
-        {
-            memcpy($$, "0", 1);
-        }
-    | pe
-        {
-            memcpy($$, "1", 1);
-        }
-    | pl
-        {
-            memcpy($$, "2", 1);
-        }
-;
-TIPO_BORRADO: pfast
-        {
-            memcpy($$, "1", 1);
-        }
-    | pfull
-        {
-            memcpy($$, "2", 1);
-        }
-;*/
+*/

@@ -93,48 +93,66 @@ void FDISK::nuevaParticion(objetos::MBR mbr, int size_p){
 				return;
 			}else{
 				//newStart = calculoInicio(mbr, size_p, f_disponible, start);
-				//
-				if(mbr.mbr_tamano - (sizeof(objetos::MBR)) < size_p){
-					newStart = -1;
-				}else{
-					newStart = calculoFit(mbr, size_p, f_disponible, start);
-				}
-				//
-				if(newStart != -1){
-					if(type == 0 || type == 1 && size_p > sizeof(objetos::EBR)){
+                if((mbr.mbr_tamano - sizeof(objetos::MBR)) < size_p){
+                    newStart = -1;
+                    cout << mbr.mbr_tamano <<endl;
+                    cout << size_p << endl;
+                }else{
+                    if(mbr.mbr_disk_fit == 1){ //primer
+                        newStart = calculoFit(mbr, size_p, f_disponible, start);
+                    }else if(mbr.mbr_disk_fit == 2){ //peor
+                        newStart = calculoFit(mbr, size_p, f_disponible, start);
+                    }else if(mbr.mbr_disk_fit ==0 ){ // mejor
+                        newStart = calculoFit(mbr, size_p, f_disponible, start);
+                    }
+                }
+                if(newStart != -1){
+                    if(type == 0 || type == 1 && size_p > sizeof(objetos::EBR)){
                         mbr.mbr_partitions[actual].part_status = '1';
-						if(type == 0){
+                        if(type == 0){
                             mbr.mbr_partitions[actual].part_type = 'P';
-						}else if(type == 1){
+                        }else if(type == 1){
                             mbr.mbr_partitions[actual].part_type = 'E';
-						}
+                        }
                         mbr.mbr_partitions[actual].part_start = newStart;
                         mbr.mbr_partitions[actual].part_size = size_p;
                         strcpy(mbr.mbr_partitions[actual].part_name, nombre);
-						if(fit == 1){
+                        if(fit == 1){
                             mbr.mbr_partitions[actual].part_fit = 'F';
-						}else if(fit == 2){
+                        }else if(fit == 2){
                             mbr.mbr_partitions[actual].part_fit = 'W';
-						}else{
+                        }else{
                             mbr.mbr_partitions[actual].part_fit = 'B';
-						}
-						ordenamiento(mbr);
-						FILE *file = fopen(path, "rb+");
-						fseek(file, 0, SEEK_SET);
-						fwrite(&mbr, sizeof(objetos::MBR), 1, file);
-						fclose(file);
-						if(type == 1){
-							objetos::EBR newEBR = crearEBR(size_p, start, -1);
-							if(particionE(mbr, newEBR, actual) != 1){
-								cout << "Error, no se pudo crear la particion" << endl;
-							}
-						}
-					}else{
-						cout << "Error, la particion logica debe de ser menor a la particion extendida" << endl;
-					}
-				}else{
-					cout << "Error, no hay espacio suficiente para crear la particion" << endl;
-				}
+                        }
+                        ordenamiento(mbr);
+                        FILE *file = fopen(path, "rb+");
+                        fseek(file, 0, SEEK_SET);
+                        fwrite(&mbr, sizeof(objetos::MBR), 1, file);
+                        fclose(file);
+                        if(type == 0){
+                            printf("Se creo una nueva particion %i de tipo primaria\n", actual);
+                            printf("--> Nombre: %s . \n", nombre);
+                            printf("--> Size: %i . \n", size_p);
+                            printf("************************************************************* \n");
+                        }else if(type == 1){
+                            objetos::EBR newEBR = crearEBR(size_p, start, -1);
+                            if(particionE(mbr, newEBR, actual) == 1){
+                                printf("Se creo una nueva particion %i de tipo extendida:\n", actual, nombre);
+                                printf("--> Nombre: %s . \n", nombre);
+                                printf("--> Tamanio: %i . \n", size_p);
+                                printf("--> next: %i . \n ", newEBR.part_next);
+                                printf("Fit: %c .\n", newEBR.part_fit);
+                                printf("************************************************************* \n");
+                            }else{
+                                cout << "Error, no se pudo crear la particion" << endl;
+                            }
+                        }
+                    }else{
+                        cout << "Error, la particion logica debe de ser menor a la particion extendida" << endl;
+                    }
+                }else{
+                    cout << "Error, no hay espacio suficiente para crear la particion" << endl;
+                }
 			}
 		}else{
 			cout << "Error, no se pueden crear mas de 4 particiones" << endl;
@@ -335,7 +353,7 @@ void FDISK::crearLogica(objetos::MBR mbr, int size_p, int pos){
 							fwrite(&next, sizeof(objetos::EBR), 1, file);
 							logica = 1;
 						}else{
-							cout << "Error, no hay espacio suficiente para crear la particion" << endl;
+                            cout << "Error, no hay espacio suficiente para crear la particion" << endl;
 						}
 					}
 					inicio_part = tmp.part_next;
