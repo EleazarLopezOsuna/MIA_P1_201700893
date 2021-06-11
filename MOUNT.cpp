@@ -1,14 +1,14 @@
 #include "MOUNT.h"
 
 MOUNT::MOUNT(int type){
-	if(tipo == 1){
-		obj_mount.f_name = 0;
-		obj_mount.f_path = 0;
+    if(type == 1){
+        obj_mount.f_name = 0;
+        obj_mount.f_path = 0;
 		obj_mount.error = 0;
 		f_name = false;
 		f_path = false;
 	}else{
-		obj_unmount.f_id = 0;
+        obj_unmount.f_id = 0;
 		obj_unmount.error = 0;
 		f_id = false;
 	}
@@ -31,10 +31,10 @@ void MOUNT::limpiar_u(){
 }
 lista::nodoC *MOUNT::insertar(lista::list ** lista, int character, objetos::MOUNT mount, lista::nodoC *pivote){
 	lista::nodoC * newNodo = (lista::nodoC *)malloc(sizeof(lista::nodoC));
-	strcpy(newNodo, mount.path);
-	newNodo->next = newNodo.prev = NULL;
-	newNodo->particion = (lista::listaParticiones *)malloc(sizeof(lista::listaParticiones));
-	newNodo->particion->first = NULL;
+    strcpy(newNodo->path, mount.path);
+    newNodo->next = newNodo->prev = NULL;
+    newNodo->particiones = (lista::listaParticiones *)malloc(sizeof(lista::listaParticiones));
+    newNodo->particiones->first = NULL;
 	//Es el primer dato en la lista
 	if((*lista)->first == NULL){
 		(*lista)->first = newNodo;
@@ -53,8 +53,8 @@ lista::nodoC *MOUNT::insertar(lista::list ** lista, int character, objetos::MOUN
 		pivote = (*lista)->last;
 		pivote->next = newNodo;
 		newNodo->next = NULL;
-		newNodo->last = (*lista)->ultimo;
-		(*lista)->ultimo = newNodo;
+        newNodo->prev = (*lista)->last;
+        (*lista)->last = newNodo;
 		newNodo->character = newNodo->prev->character + 1;
 	}
 	return newNodo;
@@ -67,7 +67,7 @@ lista::nodoC *MOUNT::buscar(char path[], lista::nodoC *pivote){
 		while(pivote != NULL){
 			if(strcmp(pivote->path, path) == 0)
 				return pivote;
-			pivote = pivote->siguiente;
+            pivote = pivote->next;
 		}
 	return NULL;
 }
@@ -96,19 +96,19 @@ void MOUNT::mostrar(lista::nodoC *pivote){
 	char character;	do{
 		if(pivote != NULL){
 			character = pivote->character;
-			tmp = pivote->particion->first;
-			if(temp != NULL){
+            tmp = pivote->particiones->first;
+            if(tmp != NULL){
 				cout << "Disco montado " << pivote->path <<endl;
 				do{
 					cout << "Particion: " << tmp->name;
-					tmp = tmp->siguiente;
+                    tmp = tmp->next;
 				}while(tmp != NULL);
 			}
 			pivote = pivote->next;
 		}
 	}while(pivote != NULL);
 }
-void mount::ejecutarM(objetos::MOUNT mount, lista::list *listaP){
+void MOUNT::ejecutarM(objetos::MOUNT mount, lista::list *listaP){
 	objetos::MBR mbr;
 	FILE *file = fopen(mount.path, "rb+");
 	if(file != NULL){
@@ -140,7 +140,7 @@ void mount::ejecutarM(objetos::MOUNT mount, lista::list *listaP){
 		if(f_existe == 0 || f_existe_logica == 0){
 			cout << "Error, la particion no existe" << endl;
 		}else{
-			lista::nodoC *nodo = buscar(mount.path, listaP);
+            lista::nodoC *nodo = buscar(mount.path, listaP->first);
 			if(nodo != NULL){
 				if((buscarP(mount.name, nodo)) == NULL){
 					cout << "Error, la particion ya esta montada" << endl;
@@ -149,7 +149,7 @@ void mount::ejecutarM(objetos::MOUNT mount, lista::list *listaP){
 				}
 			}else{
 				int letra = 'a';
-				lista::nodoC *disco = insertar(&(listaP), letra, mount, listaP->first)
+                lista::nodoC *disco = insertar(&(listaP), letra, mount, listaP->first);
 				insertarP(&(disco->particiones), disco, mount, disco->particiones->first);
 			}
 			mostrar(listaP->first);
@@ -160,12 +160,12 @@ void mount::ejecutarM(objetos::MOUNT mount, lista::list *listaP){
 	}
 }
 lista::nodoP *MOUNT::crearP(objetos::MOUNT mount){
-	return (lista::nodoP)malloc(sizeof(lista::nodoP));
+    return (lista::nodoP *)malloc(sizeof(lista::nodoP));
 }
 int MOUNT::no_existe_logica(objetos::EBR ebr, objetos::MOUNT mount, objetos::MBR mbr){
 	int f_existe = 0;
 	for(int i = 0; i < 4; i++){
-		if(strcmp(mount.name, mbr.particiones[i].part_name) == 0){
+        if(strcmp(mount.name, mbr.mbr_partitions[i].part_name) == 0){
 			f_existe = 1;
 			break;
 		}
@@ -173,8 +173,8 @@ int MOUNT::no_existe_logica(objetos::EBR ebr, objetos::MOUNT mount, objetos::MBR
 	objetos::EBR tmp = ebr;
 	objetos::EBR next;
 	FILE *file = fopen(mount.path, "rb+");
-	while(tmp.next != -1){
-		if(strcmp(mount.name, tmp.name) == 0){
+    while(tmp.part_next != -1){
+        if(strcmp(mount.name, tmp.part_name) == 0){
 			f_existe = 1;
 			break;
 		}
@@ -185,7 +185,7 @@ int MOUNT::no_existe_logica(objetos::EBR ebr, objetos::MOUNT mount, objetos::MBR
 	return f_existe;
 }
 void MOUNT::insertarP(lista::listaParticiones **lista, lista::nodoC *nodo, objetos::MOUNT mount, lista::nodoP *pivote){
-	lista::nodoP *newNodo = (lista::nodoP)malloc(sizeof(lista::nodoP));
+    lista::nodoP *newNodo = (lista::nodoP *)malloc(sizeof(lista::nodoP));
 	int valor = 0;
 	strcpy(newNodo->name, mount.name);
 	newNodo->id[0] = '9';
@@ -194,11 +194,11 @@ void MOUNT::insertarP(lista::listaParticiones **lista, lista::nodoC *nodo, objet
 	newNodo->next = NULL;
 	newNodo->prev = NULL;
 	if((*lista)->first == NULL){
-		nodo->listaParticiones->first = (*lista)->first = newNodo;
+        nodo->particiones->first = (*lista)->first = newNodo;
 		(*lista)->last = newNodo;
 		newNodo->id[2] = '1';
 		(*lista)->size = 1;
-	}else if((*lista)->primero == (*lista)->ultimo){
+    }else if((*lista)->first == (*lista)->last){
 		(*lista)->size++;
 		pivote->next = newNodo;
 		(*lista)->last = newNodo;
@@ -208,9 +208,9 @@ void MOUNT::insertarP(lista::listaParticiones **lista, lista::nodoC *nodo, objet
 		(*lista)->size++;
 		pivote = (*lista)->last;
 		pivote->next = newNodo;
-		newNodo->siguiente = NULL;
-		newNodo->prev = (*lista)->ultimo;
-		(*lista)->ultimo = newNodo;
+        newNodo->next = NULL;
+        newNodo->prev = (*lista)->last;
+        (*lista)->last = newNodo;
 		newNodo->id[2] = newNodo->prev->id[2] + 1;
 		char charact[1] = {0};
 		charact[0] = newNodo->id[2];
@@ -218,26 +218,26 @@ void MOUNT::insertarP(lista::listaParticiones **lista, lista::nodoC *nodo, objet
             newNodo->id[2] = '1';
             newNodo->id[3] = '0';
         }else if(charact[0]  == '3' || charact[0]  == '4' ||charact[0] == '5' || charact[0] == '6' || charact[0] == '7' ||charact[0] == '8' || charact[0] == '9'  ){
-            if(newNodo->last->id[3] == '0' || newNodo->last->id[3] == '1' || newNodo->last->id[3] == '2' || newNodo->last->id[3] == '3' || newNodo->last->id[3] == '4'){
+            if(newNodo->prev->id[3] == '0' || newNodo->prev->id[3] == '1' || newNodo->prev->id[3] == '2' || newNodo->prev->id[3] == '3' || newNodo->prev->id[3] == '4'){
                 newNodo->id[2] = '1';
-                newNodo->id[3] = newNodo->last->id[3] + 1;
+                newNodo->id[3] = newNodo->prev->id[3] + 1;
             }
         }else if(charact[0] == '2'){
-            if(newNodo->last->id[3] == '0' || newNodo->last->id[3] == '1' || newNodo->last->id[3] == '2' || newNodo->last->id[3] == '3' || newNodo->last->id[3] == '4'){
+            if(newNodo->prev->id[3] == '0' || newNodo->prev->id[3] == '1' || newNodo->prev->id[3] == '2' || newNodo->prev->id[3] == '3' || newNodo->prev->id[3] == '4'){
                 newNodo->id[2] = '1';
-                newNodo->id[3] = newNodo->last->id[3] + 1;
+                newNodo->id[3] = newNodo->prev->id[3] + 1;
             }
         }else{
             newNodo->id[2] = '1';
-            newNodo->id[3] = newNodo->last->id[3] + 1;
+            newNodo->id[3] = newNodo->prev->id[3] + 1;
         }
 	}
 }
 lista::nodoP *MOUNT::buscarP(char name[], lista::nodoC *pivote){
-	list::nodoP *tmp;
+    lista::nodoP *tmp;
 	if(pivote != NULL){
 		do{
-			tmp = pivote->listaParticiones->first;
+            tmp = pivote->particiones->first;
 			if(tmp != NULL){
 				do{
 					if(strcmp(tmp->name, name) == 0)
@@ -274,7 +274,7 @@ void MOUNT::eliminarP(lista::listaParticiones **lista, objetos::UNMOUNT unmount,
 						tmp->prev->next = tmp->next;
 					}
 				}else{
-					tmp = tmp->siguente;
+                    tmp = tmp->next;
 				}
 			}
 		}
@@ -288,10 +288,12 @@ lista::nodoP *MOUNT::buscar_id(objetos::UNMOUNT unmount, lista::nodoC *pivote){
 			tmp = pivote->particiones->first;
 			if(tmp != NULL){
 				do{
-					if(strcmp(tmp->id, unmount.id) == 0)
-						return tmp;
-					else
+                    if(strcmp(tmp->id, unmount.id) == 0){
+                        return tmp;
+                    }
+                    else{
 						tmp = tmp->next;
+                    }
 				}while(tmp != NULL);
 				pivote = pivote->next;
 			}
@@ -299,7 +301,7 @@ lista::nodoP *MOUNT::buscar_id(objetos::UNMOUNT unmount, lista::nodoC *pivote){
 	}
 	return NULL;
 }
-void MOUNT::ejecutarU(lista::list *listx, objeto::UNMOUNT unmount){
+void MOUNT::ejecutarU(lista::list *listx, objetos::UNMOUNT unmount){
 	char ans[2] = {0};
 	char character = unmount.id[3];
 	int valor = character;
@@ -314,7 +316,7 @@ void MOUNT::ejecutarU(lista::list *listx, objeto::UNMOUNT unmount){
 		}
 	}
 }
-lista::nodoC *MOUNT::buscarLetra(int letra, list::nodoC *pivote){
+lista::nodoC *MOUNT::buscarLetra(int letra, lista::nodoC *pivote){
 	if(pivote == NULL){
 		return NULL;
 	}
@@ -342,7 +344,7 @@ lista::nodoP *MOUNT::buscar_id(objetos::REP rep, lista::nodoC *pivote){
 	}
 	return NULL;
 }
-lista::nodoP *MOUNT::buscarExistente(char *id, list::nodoC *pivote){
+lista::nodoP *MOUNT::buscarExistente(char *id, lista::nodoC *pivote){
 	lista::nodoP *tmp;
 	if(pivote != NULL){
 		do{
@@ -359,12 +361,12 @@ lista::nodoP *MOUNT::buscarExistente(char *id, list::nodoC *pivote){
 	}
 	return NULL;
 }
-void MOUNT::eliminarName(lista::listaParticiones **listx, char nombre[], lista::nodoC *pivote){
+void MOUNT::eliminarName(lista::listaParticiones **lista, char nombre[], lista::nodoC *pivote){
 	lista::nodoP *tmp = pivote->particiones->first;
 	if(tmp == NULL){
 		cout << "Error, no existen particiones en el disco" << endl;
 	}else{
-		if((*lista)->size == 1){
+        if((*lista)->size == 1){
 			(*lista)->first = NULL;
 			(*lista)->last = NULL;
 			pivote->particiones->first = NULL;

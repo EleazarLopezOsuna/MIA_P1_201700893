@@ -15,18 +15,18 @@ public:
 		int size;
 		struct nodoP *first;
 		struct nodoP *last;
-	}
+    };
 	struct nodoC{
 		int character;
 		char path[255];
 		struct nodoC *next;
 		struct nodoC *prev;
 		struct listaParticiones *particiones;
-	}
+    };
 	struct list{
 		int size;
-		struct nodoC *primero;
+        struct nodoC *first;
 		struct nodoC *last;
-	}
+    };
 };
 #endif

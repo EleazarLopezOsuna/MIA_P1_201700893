@@ -25,7 +25,7 @@ void FDISK::setName(char *name){
 void FDISK::setRuta(char *ruta){
 	strcpy(path, ruta);
 }
-void FDIKS::ejecutar(lista::list *listx){
+void FDISK::ejecutar(lista::list *listx){
 	objetos::MBR mbr;
 	int size_p;
 	FILE *file = fopen(path, "rb+");
@@ -47,7 +47,7 @@ void FDIKS::ejecutar(lista::list *listx){
 				cout << "Error, el size de la particion debe de ser mayor a 0" << endl;
 			}
 		}else if(operacion == 1){
-			eliminarParticion(mbr, size_p);
+            eliminarParticion(mbr, listx);
 		}
 	}else{
 		cout << "Error, no se pudo abrir el disco" << endl;
@@ -60,18 +60,18 @@ void FDISK::nuevaParticion(objetos::MBR mbr, int size_p){
 	int f_nombre = 0;
 	int actual = -1;
 	for(int i = 0; i < 4; i++){
-		if(mbr.particiones[i].status == '0'){
+        if(mbr.mbr_partitions[i].part_status == '0'){
 			f_disponible++;
 			if(actual == -1){
 				actual = i;
 			}
 		}else{
-			if(mbr.particiones[i].type == 'P'){
+            if(mbr.mbr_partitions[i].part_type == 'P'){
 				f_primaria++;
-			}else if(mbr.particiones[i].type == 'E'){
+            }else if(mbr.mbr_partitions[i].part_type == 'E'){
 				f_extendida++;
 			}
-			if(strcpy(mbr.particiones[i].mbr_name, nombre) == 0){
+            if(strcpy(mbr.mbr_partitions[i].part_name, nombre) == 0){
 				f_nombre++;
 			}
 		}
@@ -79,7 +79,7 @@ void FDISK::nuevaParticion(objetos::MBR mbr, int size_p){
 	if(type == 1 && f_extendida != -1){
 		cout << "Error, ya existe una particion extendida" << endl;
 		return;
-	}else if(type == 2 && extendida == -1){
+    }else if(type == 2 && f_extendida == -1){
 		cout << "Error, no existe una particion extendida" << endl;
 		return;
 	}else if(type == 2){
@@ -102,21 +102,21 @@ void FDISK::nuevaParticion(objetos::MBR mbr, int size_p){
 				//
 				if(newStart != -1){
 					if(type == 0 || type == 1 && size_p > sizeof(objetos::EBR)){
-						mbr.particiones[actual].status = '1';
+                        mbr.mbr_partitions[actual].part_status = '1';
 						if(type == 0){
-							mbr.particiones[actual].type = 'P';
+                            mbr.mbr_partitions[actual].part_type = 'P';
 						}else if(type == 1){
-							mbr.particiones[actual].type = 'E';
+                            mbr.mbr_partitions[actual].part_type = 'E';
 						}
-						mbr.particiones[actual].start = newStart;
-						mbr.particiones[actual].size = size_p;
-						strcpy(mbr.particiones[actual].name, nombre);
+                        mbr.mbr_partitions[actual].part_start = newStart;
+                        mbr.mbr_partitions[actual].part_size = size_p;
+                        strcpy(mbr.mbr_partitions[actual].part_name, nombre);
 						if(fit == 1){
-							mbr.particiones[actual].fit = 'F';
+                            mbr.mbr_partitions[actual].part_fit = 'F';
 						}else if(fit == 2){
-							mbr.particiones[actual].fit = 'W';
+                            mbr.mbr_partitions[actual].part_fit = 'W';
 						}else{
-							mbr.particiones[actual].fit = 'B';
+                            mbr.mbr_partitions[actual].part_fit = 'B';
 						}
 						ordenamiento(mbr);
 						FILE *file = fopen(path, "rb+");
@@ -145,10 +145,10 @@ void FDISK::ordenamiento(objetos::MBR mbr){
 	objetos::part temp;
 	for(int i=1; i < 4; i++){
 	    for(int j=0; j<3; j++){
-	        if((mbr.particiones[j].start > mbr.particiones[j+1].part_start) || (mbr.particiones[j] == 0)){
-	            temp = mbr.particiones[j];
-	            mbr.particiones[j] = mbr.particiones[j+1];
-	            mbr.particiones[j+1] = temp;
+            if((mbr.mbr_partitions[j].part_start > mbr.mbr_partitions[j+1].part_start) || (mbr.mbr_partitions[j].part_start == 0)){
+                temp = mbr.mbr_partitions[j];
+                mbr.mbr_partitions[j] = mbr.mbr_partitions[j+1];
+                mbr.mbr_partitions[j+1] = temp;
 	        }
 	    }
 	}
@@ -161,29 +161,29 @@ int FDISK::calculoFit(objetos::MBR mbr, int size_p, int free_p, int start_p){
 	int min_diferencia = -1;
 	int uso = 0;
 	for(int i = 0; i < 4; i++){
-		if(mbr.particiones[i].part_start > -1){
+        if(mbr.mbr_partitions[i].part_start > -1){
 			uso++;
 		}
 	}
 	if(mbr.mbr_disk_fit == 1){
 		//Calculo FF
 		for(int i = 0; i < uso; i++){
-			pos_ini = mbr.particiones[i].part_start;
-			size_part = mbr.particiones[i].part_size;
+            pos_ini = mbr.mbr_partitions[i].part_start;
+            size_part = mbr.mbr_partitions[i].part_size;
 			//Verificamos si hay espacio disponible entre la particion
 			if((pos_ini - start_p) >= size_p)
 				break;
 			start_p = pos_ini + size_part;
 		}
-		if(start_p <= (mbr.mbr_size - size_p))
+        if(start_p <= (mbr.mbr_tamano - size_p))
 			return start_p;
 		return -1;
 	}else if(mbr.mbr_disk_fit == 2){
 		//Calculo BF
 		for(int i = 0; i < uso; i++){
 			//Tomamos los datos de la particion
-			pos_ini = mbr.particiones[i].part_start;
-			size_part = mbr.particiones[i].part_size;
+            pos_ini = mbr.mbr_partitions[i].part_start;
+            size_part = mbr.mbr_partitions[i].part_size;
 			//start - size (comprobamos si la particion ya esta usada)
 			diff = pos_ini - start_p;
 			//Cabe en el espacio i
@@ -203,11 +203,11 @@ int FDISK::calculoFit(objetos::MBR mbr, int size_p, int free_p, int start_p){
 			start_p = pos_ini + size_part;
 		}
 		//calculamos la diferencia
-		diff = mbr.mbr_size - start_p;
+        diff = mbr.mbr_tamano - start_p;
 		if((min_diferencia == -1 && diff >= size_p) || (diff >= size_p && diff <= min_diferencia)){
 			//Comprobamos si la particion cabe en el espacio sugerido
 			pos_minima = start_p;
-			min_diferencia = diff
+            min_diferencia = diff;
 		}
 		if(min_diferencia > -1)
 			return pos_minima;
@@ -216,8 +216,8 @@ int FDISK::calculoFit(objetos::MBR mbr, int size_p, int free_p, int start_p){
 		//Calculo WF
 		for(int i = 0; i < uso; i++){
 			//Tomamos los datos de la particion
-			pos_ini = mbr.particiones[i].part_start;
-			size_part = mbr.particiones[i].part_size;
+            pos_ini = mbr.mbr_partitions[i].part_start;
+            size_part = mbr.mbr_partitions[i].part_size;
 			//start - size (comprobamos si la particion ya esta usada)
 			diff = pos_ini - start_p;
 			//Cabe en el espacio i
@@ -237,11 +237,11 @@ int FDISK::calculoFit(objetos::MBR mbr, int size_p, int free_p, int start_p){
 			start_p = pos_ini + size_part;
 		}
 		//calculamos la diferencia
-		diff = mbr.mbr_size - start_p;
+        diff = mbr.mbr_tamano - start_p;
 		if((min_diferencia == -1 && diff >= size_p) || (diff >= size_p && diff >= min_diferencia)){
 			//Comprobamos si la particion cabe en el espacio sugerido
 			pos_minima = start_p;
-			min_diferencia = diff
+            min_diferencia = diff;
 		}
 		if(min_diferencia > -1)
 			return pos_minima;
@@ -266,8 +266,8 @@ objetos::EBR FDISK::crearEBR(int size_p, int inicio_p, int next){
 }
 int FDISK::particionE(objetos::MBR mbr, objetos::EBR ebr, int actual){
 	int f_creado = 0;
-	int part_start = mbr.particiones[actual].part_start;
-	int part_size = mbr.particiones[actual].part_size;
+    int part_start = mbr.mbr_partitions[actual].part_start;
+    int part_size = mbr.mbr_partitions[actual].part_size;
 	int part_end = part_start + part_size - 1;
 	if(part_end < mbr.mbr_tamano){
 		if(part_start > part_end){
@@ -289,8 +289,8 @@ int FDISK::particionE(objetos::MBR mbr, objetos::EBR ebr, int actual){
 }
 void FDISK::crearLogica(objetos::MBR mbr, int size_p, int pos){
 	objetos::EBR ebr;
-	int inicio_part = mbr.particiones[pos].part_start;
-	int total = mbr.particiones[pos].part_size;
+    int inicio_part = mbr.mbr_partitions[pos].part_start;
+    int total = mbr.mbr_partitions[pos].part_size;
 	int extendida = inicio_part + total;
 	int disponible = total - sizeof(objetos::EBR);
 	int necesario = disponible - size_p;
@@ -298,9 +298,9 @@ void FDISK::crearLogica(objetos::MBR mbr, int size_p, int pos){
 	FILE *file = fopen(path, "rb+");
 	fseek(file, inicio_part, SEEK_SET);
 	fread(&ebr, sizeof(objetos::EBR), 1, file);
-	if(tota > size_p){
+    if(total > size_p){
 		if(sizeof(objetos::EBR) > size_p){
-			cout << "Error, no hay espacio suficiente" << endl
+            cout << "Error, no hay espacio suficiente" << endl;
 		}else{
 			objetos::EBR tmp = ebr;
 			objetos::EBR next;
@@ -348,7 +348,7 @@ void FDISK::crearLogica(objetos::MBR mbr, int size_p, int pos){
 int FDISK::no_existe_logica(objetos::EBR ebr, objetos::MBR mbr){
 	int flag = 0;
 	for(int i = 0; i < 4; i++){
-		if(strcmp(nombre, mbr.particiones[i].part_name) == 0){
+        if(strcmp(nombre, mbr.mbr_partitions[i].part_name) == 0){
 			flag = 1;
 			break;
 		}
@@ -371,14 +371,14 @@ void FDISK::eliminarParticion(objetos::MBR mbr, lista::list *listx){
 	int particion = -1;
 	int posicion = -1;
 	int f_eliminada = 0;
-	objetos::MOUNT *newMount;
+    MOUNT *newMount;
 	for(int i = 0; i < 4; i++){
-		if(mbr.particiones[i].status == '1'){
-			if(strcmp(mbr.particiones[i].part_name, nombre) == 0){
+        if(mbr.mbr_partitions[i].part_status == '1'){
+            if(strcmp(mbr.mbr_partitions[i].part_name, nombre) == 0){
 				f_eliminada = i; //Obtengo la particion a eliminar
 			}
-			if(mbr.particiones[i].type = 'E'){
-				extendida = i; //Obtengo la posicion de la extendida
+            if(mbr.mbr_partitions[i].part_type = 'E'){
+                posicion = i; //Obtengo la posicion de la extendida
 			}
 		}
 	}
@@ -388,39 +388,39 @@ void FDISK::eliminarParticion(objetos::MBR mbr, lista::list *listx){
 			//Si existe
 			lista::nodoP *particion = newMount->buscarP(path, listx->first);
 			if(particion != NULL){
-				nuevo->eliminarName(&(tmp->particiones), nombre, tmp);
+                newMount->eliminarName(&(tmp->particiones), nombre, tmp);
 			}
 		}
 		FILE *file = fopen(path, "rb+");
-		if(mbr.particiones[particion].part_type == 'P' || mbr.particiones[eliminar].type == 'E'){
+        if(mbr.mbr_partitions[particion].part_type == 'P' || mbr.mbr_partitions[particion].part_type == 'E'){
 			if(borrar == 2){
 				//Full
 				if(file != NULL){
-					int inicio = mbr.particiones[eliminar].part_start;
-					int tam = mbr.particiones[eliminar].part_size;
+                    int inicio = mbr.mbr_partitions[particion].part_start;
+                    int tam = mbr.mbr_partitions[particion].part_size;
 					fseek(file, inicio, SEEK_SET);
 					for(int i = 0; i < tam; i ++){
 						fputc(0, file);
 					}
 				}
 			}
-			mbr.particiones[eliminar].part_status = '0';
-			mbr.particiones[eliminar].part_fit = '\0';
-			strcpy(mbr.particiones[eliminar].part_name, "\0");
-			mbr.particiones[eliminar].part_size = 0;
-			mbr.particiones[eliminar].part_start = 0;
-			mbr.particiones[eliminar].part_type = 'N';
+            mbr.mbr_partitions[particion].part_status = '0';
+            mbr.mbr_partitions[particion].part_fit = '\0';
+            strcpy(mbr.mbr_partitions[particion].part_name, "\0");
+            mbr.mbr_partitions[particion].part_size = 0;
+            mbr.mbr_partitions[particion].part_start = 0;
+            mbr.mbr_partitions[particion].part_type = 'N';
 			ordenamiento(mbr);
 			fseek(file, 0, SEEK_SET);
 			fwrite(&mbr, sizeof(objetos::MBR), 1, file);
 			fclose(file);
-			eliminada++;
+            f_eliminada++;
 		}
-	}else if(eliminar == -1 && pos != -1){
+    }else if(particion == -1 && posicion != -1){
 		//Logica
 		lista::nodoC *tmp = newMount->buscar(path, listx->first);
 		if(tmp != NULL){
-			lista::nodoP *particion = newMount->buscar_particion(nombre, listx->first);
+            lista::nodoP *particion = newMount->buscarP(nombre, listx->first);
 			if(particion != NULL){
 				newMount->eliminarName(&(tmp->particiones), nombre, tmp);
 			}
@@ -430,7 +430,7 @@ void FDISK::eliminarParticion(objetos::MBR mbr, lista::list *listx){
 			objetos::EBR ebr;
 			objetos::EBR primero;
 			objetos::EBR temp;
-			int inicio_part = mbr.particiones[extendida].part_start;
+            int inicio_part = mbr.mbr_partitions[posicion].part_start;
 			int inicio = 0;
 			int size = 0;
 			fseek(file, inicio_part, SEEK_SET);
@@ -492,7 +492,7 @@ void FDISK::eliminarParticion(objetos::MBR mbr, lista::list *listx){
 					}
 					if(prev.part_start < inicio_part){
 						//no se pudo eliminar por que el inicio queda antes que el ebr
-						return
+                        return;
 					}
 					prev.part_status = '0';
 					prev.part_fit = 'W';
@@ -509,7 +509,7 @@ void FDISK::eliminarParticion(objetos::MBR mbr, lista::list *listx){
 					//Full
 					int final = inicio + size - 1;
 					fseek(file, inicio, SEEK_SET);
-					for(int i = 0; i < temp.part_size, SEEK_SET){
+                    for(int i = 0; i < temp.part_size; i++){
 						fputc(0, file);
 					}
 				}
@@ -518,14 +518,14 @@ void FDISK::eliminarParticion(objetos::MBR mbr, lista::list *listx){
 		}
 	}
 }
-void FDISK::existe_logica(objetos::EBR ebr, char nom[], char ruta[], objetos::MBR mbr){
+objetos::EBR FDISK::existe_logica(objetos::EBR ebr, char nom[], char ruta[], objetos::MBR mbr){
 	objetos::EBR newEBR;
 	newEBR.part_next = 0;
 	newEBR.part_status = '0';
 	objetos::EBR temp = ebr;
 	FILE *file = fopen(ruta, "rb+");
 	while(temp.part_next != -1){
-		if(strcmp(nombre, tmp.name) == 0){
+        if(strcmp(nombre, temp.part_name) == 0){
 			newEBR = temp;
 			break;
 		}

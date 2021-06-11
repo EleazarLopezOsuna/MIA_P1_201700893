@@ -31,13 +31,13 @@ public:
 		int part_start;
 		int part_size;
 		int part_next;
-		int part_name[16];
+        char part_name[16];
 	};
 	struct MOUNT{
 		char path[255];
 		char name[16];
 		char id[10];
-		int f_paht;
+        int f_path;
 		int f_name;
 		int error;
 	};

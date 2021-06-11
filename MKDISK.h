@@ -40,6 +40,6 @@ public:
 	void getRuta(char *path);
 	void limpiar();
 	void crearDisco(char *path, int tipo);
-	void mostrarDatos(MKDISK *disco);
+    void mostrarDatos();
 };
 #endif

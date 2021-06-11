@@ -14,22 +14,26 @@ void RMDISK::limpiar(){
 }
 void RMDISK::ejecutar(){
 	FILE *file = fopen(ruta, "rb");
-    char respuesta[1];
-	while(true){
-		if(file != NULL){
-			cout << "Desea eliminar el disco: " << ruta << "?" << endl;
-			cout << "Y/N" << endl;
-			scanf("%s", &respuesta);
-			if(strcmp(respuesta, "Y") == 0 || strcmp(respuesta, "y") == 0){
-				if(remove(ruta) == 0){
-					cout << "Disco eliminado" << endl;
-				}else{
-					cout << "Error: no se pudo eliminar el disco" << endl;
-				}
-				break;
-			}else if(strcmp(respuesta, "N") == 0 || strcmp(respuesta, "n") == 0){
-				break;
-			}
-		}
-	}
+    if(file != NULL){
+        char respuesta[1];
+        while(true){
+            if(file != NULL){
+                cout << "Desea eliminar el disco: " << ruta << "?" << endl;
+                cout << "Y/N" << endl;
+                scanf("%s", &respuesta);
+                if(strcmp(respuesta, "Y") == 0 || strcmp(respuesta, "y") == 0){
+                    if(remove(ruta) == 0){
+                        cout << "Disco eliminado" << endl;
+                    }else{
+                        cout << "Error: no se pudo eliminar el disco" << endl;
+                    }
+                    break;
+                }else if(strcmp(respuesta, "N") == 0 || strcmp(respuesta, "n") == 0){
+                    break;
+                }
+            }
+        }
+    }else{
+        cout << "Error: no se pudo eliminar el disco" << endl;
+    }
 }

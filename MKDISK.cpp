@@ -104,6 +104,7 @@ void MKDISK::crearDisco(char *path, int tipo){
         mbr = crearMBR(obtenerSize());
         fwrite(&mbr, sizeof(objetos::MBR), 1, file);
         fclose(file);
+        mostrarDatos();
     }
 }
 int MKDISK::obtenerSize(){
@@ -136,13 +137,10 @@ objetos::MBR MKDISK::crearMBR(int mbrSize){
 	return newMBR;
 }
 
-void MKDISK::mostrarDatos(MKDISK *disco){
+void MKDISK::mostrarDatos(){
 	cout << "---------Informacion del Disco----------" << endl;
-	cout << "Size: " << disco->size << endl;
-	cout << "Fit: " << disco->f << endl;
-	cout << "U: " << disco->u << endl;
-	cout << "Path: " << disco->path << endl;
-	disco->ejecutar();
-	disco->limpiar();
-    disco = new MKDISK();
+    cout << "Size: " << size << endl;
+    cout << "Fit: " << f << endl;
+    cout << "U: " << u << endl;
+    cout << "Path: " << ruta << endl;
 }

@@ -14,7 +14,7 @@ public:
 	string path = "";
 	string name = "";
 	objetos::MOUNT obj_mount;
-	objetos::MOUNT obj_unmount;
+    objetos::UNMOUNT obj_unmount;
 	bool f_path;
 	bool f_name;
 	bool f_id;
@@ -22,7 +22,7 @@ public:
 	MOUNT(int type);
 	MOUNT();
 	//Metodos
-	void montar(mount*);
+    void montar(MOUNT*);
 	void limpiar_m();
 	void limpiar_u();
 	void eliminar(lista::list **, int, lista::nodoC *pivote);
@@ -32,7 +32,7 @@ public:
 	void insertarP(lista::listaParticiones **, lista::nodoC *, objetos::MOUNT, lista::nodoP *);
 	void eliminarP(lista::listaParticiones **, objetos::UNMOUNT, lista::nodoC *);
 	void ejecutarU(lista::list *, objetos::UNMOUNT);
-	void eliminarName(lista::lista **, char [], lista::nodoC *pivote);
+    void eliminarName(lista::listaParticiones **, char [], lista::nodoC *pivote);
 	//Funciones
 	lista::nodoC *insertar(lista::list **, int, objetos::MOUNT, lista::nodoC *);
 	lista::nodoC *buscar(char path[], lista::nodoC *pivote);
