@@ -393,24 +393,31 @@ void FDISK::eliminarParticion(objetos::MBR mbr, lista::list *listx){
 	int f_eliminada = 0;
     MOUNT *newMount;
 	for(int i = 0; i < 4; i++){
+        cout << "Tipo: " << mbr.mbr_partitions[i].part_type << endl;
         if(mbr.mbr_partitions[i].part_status == '1'){
             if(strcmp(mbr.mbr_partitions[i].part_name, nombre) == 0){
-				f_eliminada = i; //Obtengo la particion a eliminar
+                particion = i; //Obtengo la particion a eliminar
+                break;
 			}
-            if(mbr.mbr_partitions[i].part_type = 'E'){
+            if(mbr.mbr_partitions[i].part_type == 'E'){
                 posicion = i; //Obtengo la posicion de la extendida
 			}
 		}
-	}
-	if(particion != -1){
-		lista::nodoC *tmp = newMount->buscar(path, listx->first);
-		if(tmp != NULL){
-			//Si existe
-			lista::nodoP *particion = newMount->buscarP(path, listx->first);
-			if(particion != NULL){
+    }
+    if(particion != -1){
+        lista::nodoC *tmp;
+        if(listx != NULL){
+            tmp = newMount->buscar(path, listx->first);
+        }else{
+            tmp = newMount->buscar(path, NULL);
+        }
+        if(tmp != NULL){
+            //Si existe
+            lista::nodoP *particion = newMount->buscarP(path, listx->first);
+            if(particion != NULL){
                 newMount->eliminarName(&(tmp->particiones), nombre, tmp);
-			}
-		}
+            }
+        }
 		FILE *file = fopen(path, "rb+");
         if(mbr.mbr_partitions[particion].part_type == 'P' || mbr.mbr_partitions[particion].part_type == 'E'){
 			if(borrar == 2){
@@ -437,121 +444,24 @@ void FDISK::eliminarParticion(objetos::MBR mbr, lista::list *listx){
             f_eliminada++;
 		}
     }else if(particion == -1 && posicion != -1){
-		//Logica
-		lista::nodoC *tmp = newMount->buscar(path, listx->first);
-		if(tmp != NULL){
-            lista::nodoP *particion = newMount->buscarP(nombre, listx->first);
-			if(particion != NULL){
-				newMount->eliminarName(&(tmp->particiones), nombre, tmp);
-			}
-		}
-		FILE *file = fopen(path, "rb+");
-		if(file != NULL){
-			objetos::EBR ebr;
-			objetos::EBR primero;
-			objetos::EBR temp;
-            int inicio_part = mbr.mbr_partitions[posicion].part_start;
-			int inicio = 0;
-			int size = 0;
-			fseek(file, inicio_part, SEEK_SET);
-			fread(&ebr, sizeof(objetos::EBR), 1, file);
-			primero = ebr;
-			temp = existe_logica(ebr, nombre, path, mbr);
-			if(temp.part_status != '0' && temp.part_next != 0){
-				if(temp.part_start == primero.part_start){
-					objetos::EBR newEBR;
-					newEBR.part_status = '0';
-					newEBR.part_fit = 'W';
-					newEBR.part_start = temp.part_start;
-					newEBR.part_size = temp.part_size;
-					newEBR.part_next = temp.part_next;
-					strcpy(newEBR.part_name, "\0");
-					if(newEBR.part_start < inicio_part){
-						//no se pudo eliminar por que el inicio queda antes que el ebr
-						return;
-					}
-					fseek(file, newEBR.part_start, SEEK_SET);
-					fwrite(&newEBR, sizeof(objetos::EBR), 1, file);
-					inicio = temp.part_start + sizeof(objetos::EBR);
-					size = temp.part_size - sizeof(objetos::EBR);
-				}else if(temp.part_next == -1){
-					//Es en la ultima posicion
-					objetos::EBR prev;
-					objetos::EBR next;
-					prev = primero;
-					if(prev.part_next != -1){
-						fseek(file, prev.part_next, SEEK_SET);
-						fread(&next, sizeof(objetos::EBR), 1, file);
-						if(next.part_start < temp.part_start){
-							prev = next;
-						}
-					}
-					prev.part_next = -1;
-					if(prev.part_start < inicio_part){
-						//no se pudo eliminar por que el inicio queda antes que el ebr
-						return;
-					}
-					prev.part_status = '0';
-					fseek(file, prev.part_start, SEEK_SET);
-					fwrite(&prev, sizeof(objetos::EBR), 1, file);
-					inicio = temp.part_start;
-					size = temp.part_size;
-				}else{
-					objetos::EBR next;
-					fseek(file, temp.part_next, SEEK_SET);
-					fwrite(&next, sizeof(objetos::EBR), 1, file);
-					objetos::EBR prev;
-					prev = primero;
-					objetos::EBR temporal;
-					if(prev.part_next != -1){
-						fseek(file, prev.part_next, SEEK_SET);
-						fread(&temporal, sizeof(objetos::EBR), 1, file);
-						if(temporal.part_start < temp.part_start){
-							prev = temporal;
-						}
-					}
-					if(prev.part_start < inicio_part){
-						//no se pudo eliminar por que el inicio queda antes que el ebr
-                        return;
-					}
-					prev.part_status = '0';
-					prev.part_fit = 'W';
-					strcpy(prev.part_name, "\0");
-					prev.part_start = temp.part_start;
-					prev.part_size = temp.part_size;
-					prev.part_next = temp.part_next;
-					fseek(file, prev.part_start, SEEK_SET);
-					fwrite(&prev, sizeof(objetos::EBR), 1, file);
-					inicio = temp.part_start;
-					size = temp.part_size;
-				}
-				if(borrar = 2){
-					//Full
-					int final = inicio + size - 1;
-					fseek(file, inicio, SEEK_SET);
-                    for(int i = 0; i < temp.part_size; i++){
-						fputc(0, file);
-					}
-				}
-			}
-			fclose(file);
-		}
+        //Logica
+        cout << "No elimino logicas :(" << endl;
 	}
 }
 objetos::EBR FDISK::existe_logica(objetos::EBR ebr, char nom[], char ruta[], objetos::MBR mbr){
 	objetos::EBR newEBR;
 	newEBR.part_next = 0;
 	newEBR.part_status = '0';
-	objetos::EBR temp = ebr;
+    objetos::EBR temp = ebr;
 	FILE *file = fopen(ruta, "rb+");
-	while(temp.part_next != -1){
-        if(strcmp(nombre, temp.part_name) == 0){
+    while(temp.part_next != -1){
+        if(strcmp(nom, temp.part_name) == 0){
 			newEBR = temp;
 			break;
 		}
 		fseek(file, temp.part_next, SEEK_SET);
 		fread(&temp, sizeof(objetos::EBR), 1, file);
 	}
-	fclose(file);
+    fclose(file);
 	return newEBR;
 }

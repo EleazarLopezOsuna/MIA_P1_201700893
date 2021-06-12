@@ -60,11 +60,10 @@ lista::nodoC *MOUNT::insertar(lista::list ** lista, int character, objetos::MOUN
 	return newNodo;
 }
 lista::nodoC *MOUNT::buscar(char path[], lista::nodoC *pivote){
-
 	if(pivote == NULL)
 		return NULL;
 	else
-		while(pivote != NULL){
+        while(pivote != NULL){
 			if(strcmp(pivote->path, path) == 0)
 				return pivote;
             pivote = pivote->next;

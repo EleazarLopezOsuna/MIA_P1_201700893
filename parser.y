@@ -68,10 +68,10 @@ MOUNT * desmontaje = new MOUNT(2);
 lista::list *listx;
 //Estructuras::user_activo * activo;
 
-/*void setSalida(particioneslist::lista * l_general , Estructuras::user_activo * user){
-    lista = l_general;
+void setSalida(lista::list * l_general , Estructuras::user_activo * user){
+    listx = l_general;
     activo = user;
-}*/
+}
 
 int yyerror(const char* mens)
 {
