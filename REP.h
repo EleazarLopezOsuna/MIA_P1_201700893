@@ -3,7 +3,6 @@
 #include <MOUNT.h>
 #include <MKDISK.h>
 #include "MKFILE.h"
-#include "FFIND.h"
 #include <stdio.h>
 #include "LOGIN.h"
 #include <lista.h>
@@ -47,6 +46,7 @@ public:
     void obtener_Ngrupo(objetos::superBloque super_bloque, int n_grupo, FILE * archivo_disco,FILE* doc);
     void flechas_journal(int inicioParticion, int inicioBitmapInodo, FILE *archivo, FILE * fp, char particion[]);
     void flechas_inodos(objetos::superBloque super, FILE * fp);
+    char *get_Fecha(time_t time);
 };
 
 #endif // REPORTES_H

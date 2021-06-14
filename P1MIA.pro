@@ -16,7 +16,18 @@ SOURCES += main.cpp \
     RMDISK.cpp \
     FDISK.cpp \
     lista.cpp \
-    MOUNT.cpp
+    MOUNT.cpp \
+    fs.cpp \
+    RMUSR.cpp \
+    RMGRP.cpp \
+    REP.cpp \
+    MKGRP.cpp \
+    MKFS.cpp \
+    MKFILE.cpp \
+    MKDIR.cpp \
+    LOGOUT.cpp \
+    LOGIN.cpp \
+    CAT.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -42,4 +53,15 @@ HEADERS += \
     FDISK.h \
     lista.h \
     MOUNT.h \
-    objetos.h
+    objetos.h \
+    fs.h \
+    RMUSR.h \
+    RMGRP.h \
+    REP.h \
+    MKGRP.h \
+    MKFS.h \
+    MKFILE.h \
+    MKDIR.h \
+    LOGOUT.h \
+    LOGIN.h \
+    CAT.h

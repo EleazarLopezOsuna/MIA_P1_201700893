@@ -21,7 +21,7 @@ public:
     char ruta_carpeta[255];
     int es_carpeta;
     int contador;
-    objetos::super_bloque sb_aux;
+    objetos::superBloque sb_aux;
     objetos::inodo father_aux;
     struct Lista{
         char carpeta[30];
@@ -32,10 +32,11 @@ public:
     void get_ruta(char * path);
     int ContadorBarras(char *string);
     char *Concatenar(char *param, char letra);
-    int BusquedaCarpeta(FILE *fp, objetos::super_bloque super, int posInodo, Lista ruta[], int n, int pos);
-    void modificar_bitmap(FILE * archivo, int inicio,objetos::super_bloque super);
+    int BusquedaCarpeta(FILE *fp, objetos::superBloque super, int posInodo, Lista ruta[], int n, int pos);
+    void modificar_bitmap(FILE * archivo, int inicio,objetos::superBloque super);
     void limpiar();
-    int verificarCarpeta(FILE *file_disco, objetos::super_bloque super_bloque, int pos_Inodo, char nombre [10]);
+    int verificarCarpeta(FILE *file_disco, objetos::superBloque super_bloque, int pos_Inodo, char nombre [10]);
     void EscribirTexto(FILE *fp, char text[]);
+    int CrearInodoArchivo_Carpeta(FILE *archivo_disco, char nombre[], char tipoInode, int logueado, int grupoLogueado,int size);
 };
 #endif // MKDIR_H

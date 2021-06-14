@@ -17,10 +17,10 @@ void CAT::ejecutar_CAT(lista::list * lista , objetos::activeUser * usuario) {
         grupoLogueado = usuario->grupo;
     }
     int letra = usuario->particion[3];
-    mount * nuevo;
+    MOUNT * nuevo;
     //busca la lista del particiones del disco
-    lista::nodoC * disco_montado = nuevo->buscar_porLetra(letra, lista->primero);
-    lista::nodoP * particion= nuevo->buscar_id_existente(usuario->particion, lista->primero);
+    lista::nodoC * disco_montado = nuevo->buscarLetra(letra, lista->first);
+    lista::nodoP * particion= nuevo->buscarExistente(usuario->particion, lista->first);
     if(disco_montado !=NULL){
         FILE * archivo_disco = fopen(disco_montado->path, "rb+");
         if(archivo_disco != NULL){
@@ -31,7 +31,7 @@ void CAT::ejecutar_CAT(lista::list * lista , objetos::activeUser * usuario) {
             //buscar particion en el mbr
             int num_particion=-1;
             for(int i=0;i<4;i++){
-                if(strcmp(mbr.mbr_partitions[i].name,particion->name)==0){
+                if(strcmp(mbr.mbr_partitions[i].part_name,particion->name)==0){
                     num_particion=i;
                     break;
                 }
@@ -41,7 +41,7 @@ void CAT::ejecutar_CAT(lista::list * lista , objetos::activeUser * usuario) {
             objetos::superBloque  super_bloque ;
             fseek(archivo_disco, posicion_super, SEEK_SET);
             fread(&super_bloque, sizeof (objetos::superBloque), 1, archivo_disco);
-            if(super_bloque.magic == 61267){ // asegurando que si se este leyendo bien
+            if(super_bloque.s_magic == 61267){ // asegurando que si se este leyendo bien
 
             }else{
                 cout << "No se encontro el super bloque" << endl;
@@ -49,43 +49,43 @@ void CAT::ejecutar_CAT(lista::list * lista , objetos::activeUser * usuario) {
             }
             //*** ejecucion del CAT
             MKDIR * mkdr = new MKDIR();
-            fsystem * sis = new fsystem();
-            objetos::Inodo father ;
+            fs * sis = new fs();
+            objetos::inodo father ;
             int inode_position;
             int n = mkdr->ContadorBarras(ruta);
             if (n == 1) {
                 //Recuperar Inodo padre
-                inode_position = super_bloque.inode_start;
+                inode_position = super_bloque.s_inode_start;
                 fseek(archivo_disco, inode_position, SEEK_SET);
-                fread(&father, sizeof (objetos::Inodo), 1, archivo_disco);
+                fread(&father, sizeof (objetos::inodo), 1, archivo_disco);
             } else {
-                MKDIR::list ruta[n - 1];
+                MKDIR::Lista ruta[n - 1];
                 for (int i = 0; i < n - 1; i++) {
                     memset(ruta[i].carpeta, 0, sizeof (ruta[i].carpeta));
                 }
-                int longPath = strlen(ruta);
+                int longPath = strlen(this->ruta);
                 int k = -1;
                 int contador = 0;
                 for (int i = 0; i < longPath; i++) {
-                    if (ruta[i] == '/') {
+                    if (this->ruta[i] == '/') {
                         contador++;
                         k++;
                         if (contador == n) {
                             break;
                         }
                     } else {
-                        strcpy(ruta[k].carpeta, mkdr->ConCATenar(ruta[k].carpeta, ruta[i]));
+                        strcpy(ruta[k].carpeta, mkdr->Concatenar(ruta[k].carpeta, this->ruta[i]));
                     }
                 }
                 //Busqueda de la ruta
-                inode_position = mkdr->BusquedaCarpeta(archivo_disco, super_bloque, super_bloque.inode_start, ruta, n - 1, 0);
+                inode_position = mkdr->BusquedaCarpeta(archivo_disco, super_bloque, super_bloque.s_inode_start, ruta, n - 1, 0);
                     if (inode_position == 0) {
                         cout << "Error, la ruta no existe" << endl;
                         return;
                     } else {
                         //Recuperar Inodo padre
                         fseek(archivo_disco, inode_position, SEEK_SET);
-                        fread(&father, sizeof (objetos::Inodo), 1, archivo_disco);
+                        fread(&father, sizeof (objetos::inodo), 1, archivo_disco);
                     }
             }
             //Obtener el Inodo del archivo
@@ -99,15 +99,15 @@ void CAT::ejecutar_CAT(lista::list * lista , objetos::activeUser * usuario) {
             int pos_object = sis->ExisteInodo(super_bloque, inode_position, filename,archivo_disco);
             if (pos_object != -1) {
                 //Inodo de archivo
-                objetos::Inodo inodoArchivo;
+                objetos::inodo inodoArchivo;
                 fseek(archivo_disco, pos_object, SEEK_SET);
-                fread(&inodoArchivo, sizeof (objetos::Inodo), 1, archivo_disco);
+                fread(&inodoArchivo, sizeof (objetos::inodo), 1, archivo_disco);
                 //Verficar si usuario logueado tiene permisos de lectura
                 int puede = 0;
                 if (logueado != 1) {
                     char buffer[7];
                     memset(buffer, 0, sizeof (buffer));
-                    sprintf(buffer, "%d", inodoArchivo.perm);
+                    sprintf(buffer, "%d", inodoArchivo.i_perm);
                     if (buffer[0] == '4' || buffer[0] == '5' || buffer[0] == '6' || buffer[0] == '7') {
                         puede = 1;
                     }

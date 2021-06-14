@@ -44,8 +44,8 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
     int letra = usuario->particion[3];
     MOUNT * nuevo;
     //busca la lista del particiones del disco
-    lista::nodoC * disco_montado = nuevo->buscar_porLetra(letra, lista->first);
-    lista::nodoP * particion= nuevo->buscar_id_exisbloqueApuntadb_poinroobloqueArchivoe(usuario->particion, lista->first);
+    lista::nodoC * disco_montado = nuevo->buscarLetra(letra, lista->first);
+    lista::nodoP * particion= nuevo->buscarExistente(usuario->particion, lista->first);
     if(disco_montado !=NULL){
         FILE * archivo_disco = fopen(disco_montado->path, "rb+");
         if(archivo_disco != NULL){
@@ -83,10 +83,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                 fseek(archivo_disco, file_position, SEEK_SET);
                 fread(&father, sizeof (objetos::inodo), 1, archivo_disco);
             } else {
-                MKDIR::list ruta[n - 1];
+                MKDIR::Lista ruta[n - 1];
                 //Limpiar
                 for (int i = 0; i < n - 1; i++) {
-                    memset(ruta[i].part_carpeta, 0, sizeof (ruta[i].part_carpeta));
+                    memset(ruta[i].carpeta, 0, sizeof (ruta[i].carpeta));
                 }
                 int longPath = strlen(ruta_nArchivo);
                 int k = -1;
@@ -99,7 +99,7 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             break;
                         }
                     } else {
-                        strcpy(ruta[k].part_carpeta, MKDIR_->Concatenar(ruta[k].part_carpeta, ruta_nArchivo[i]));
+                        strcpy(ruta[k].carpeta, MKDIR_->Concatenar(ruta[k].carpeta, ruta_nArchivo[i]));
                     }
                 }
                 //BUSCAR RUTA
@@ -110,7 +110,7 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                         int imposible = 0;
                         int pos_inodo = super_bloque.s_inode_start; //Empezamos buscando desde la raíz.
                         for (int i = 0; i < n - 1; i++) {
-                            int posicion = sis->ExisteInodo(super_bloque, pos_inodo, ruta[i].part_carpeta,archivo_disco);
+                            int posicion = sis -> ExisteInodo(super_bloque, pos_inodo, ruta[i].carpeta,archivo_disco);
                             if (posicion != -1) {
                                 //REVISAR PERMISOS DE ESCRITURA EN LA CARPETA PADRE
                                 objetos::inodo nuevofather;
@@ -140,18 +140,18 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                                 fread(&nuevofather, sizeof (objetos::inodo), 1, archivo_disco);
                                 MKDIR_->sb_aux = super_bloque;
                                 MKDIR_->father_aux = nuevofather;
-                                int pos_nuevo = MKDIR_->CrearInodoArchivo_Carpeta(archivo_disco,ruta[i].part_carpeta, '0', logueado, grupoLogueado,size);
+                                int pos_nuevo = MKDIR_->CrearInodoArchivo_Carpeta(archivo_disco,ruta[i].carpeta, '0', logueado, grupoLogueado,size);
                                 super_bloque = MKDIR_->sb_aux;
                                 nuevofather = MKDIR_->father_aux;
                                 //Actualizar padre
                                 fseek(archivo_disco, pos_inodo, SEEK_SET);
                                 fwrite(&nuevofather, sizeof (objetos::inodo), 1, archivo_disco);
                                 //Modificando bitmap de Inodo
-                                int bipInodo = sis->Posbitmap(super_bloque.s_inode_start, super_bloque.s_first_inode, sizeof (objetos::inodo));
+                                int bipInodo = PosBitmap(super_bloque.s_inode_start, super_bloque.s_first_ino, sizeof (objetos::inodo));
                                 int posBit = super_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::bitmap));
-                                sis->Actualizarbitmap(archivo_disco, posBit, '1');
+                                sis -> ActualizarBitmap(archivo_disco, posBit, '1');
                                 //Actualizar super bloque
-                                super_bloque.s_first_inode = super_bloque.s_first_inode + sizeof (objetos::inodo);
+                                super_bloque.s_first_ino = super_bloque.s_first_ino + sizeof (objetos::inodo);
                                 super_bloque.s_free_inodes_count--;
                                 pos_inodo = pos_nuevo;
                             }
@@ -217,7 +217,7 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                         }
                         //CREAR ARCHIVO
                         //Verificar si ya existe el archivo, si existe entonces se sobrescribe
-                        int esta = sis->ExisteInodo( super_bloque, file_position, filename,archivo_disco);
+                        int esta = sis -> ExisteInodo(super_bloque, file_position, filename,archivo_disco);
                         if (esta == -1) {
                             MKDIR_->sb_aux = super_bloque;
                             MKDIR_->father_aux = father;
@@ -241,21 +241,21 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             fseek(archivo_disco, posInodo, SEEK_SET);
                             fwrite(&newfile, sizeof (objetos::inodo), 1, archivo_disco);
                             //Modificando bitmap de Inodo
-                            int bipInodo = sis->Posbitmap(super_bloque.s_inode_start, super_bloque.s_first_inode, sizeof (objetos::inodo));
+                            int bipInodo = PosBitmap(super_bloque.s_inode_start, super_bloque.s_first_ino, sizeof (objetos::inodo));
                             int posBit = super_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::bitmap));
-                            sis->Actualizarbitmap(archivo_disco, posBit, '1');
+                            sis -> ActualizarBitmap(archivo_disco, posBit, '1');
                             //Actualizar Super bloque
-                            super_bloque.s_first_inode = super_bloque.s_first_inode + sizeof (objetos::inodo);
+                            super_bloque.s_first_ino = super_bloque.s_first_ino + sizeof (objetos::inodo);
                             super_bloque.s_free_inodes_count--;
                             // CREAR EL JURNALING ***********************************************************************
                             //--------------------------------- obtengo la posicion del journal
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -282,10 +282,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //**********************************************************************************
                         } else {
@@ -308,10 +308,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -338,11 +338,11 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 //  cout << " escribe el journal i=" <<a << endl;
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //***********************************************************************************
                         }
@@ -356,7 +356,7 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                     if (size == 0) {
                         //Crear Inodo de archivo
                         //Verificar si ya existe el archivo, si existe entonces se sobrescribe
-                        int esta = sis->ExisteInodo(super_bloque, file_position, filename,archivo_disco);
+                        int esta = sis -> ExisteInodo(super_bloque, file_position, filename,archivo_disco);
                         if (esta == -1) {
                             MKDIR_->sb_aux = super_bloque;
                             MKDIR_->father_aux = father;
@@ -367,21 +367,21 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             fseek(archivo_disco, file_position, SEEK_SET);
                             fwrite(&father, sizeof (objetos::inodo), 1, archivo_disco);
                             //Modificando bitmap de Inodo
-                            int bipInodo = sis->Posbitmap(super_bloque.s_inode_start, super_bloque.s_first_inode, sizeof (objetos::inodo));
+                            int bipInodo = PosBitmap(super_bloque.s_inode_start, super_bloque.s_first_ino, sizeof (objetos::inodo));
                             int posBit = super_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::bitmap));
-                            sis->Actualizarbitmap(archivo_disco, posBit, '1');
+                            sis -> ActualizarBitmap(archivo_disco, posBit, '1');
                             //Actualizar Super bloque
-                            super_bloque.s_first_inode = super_bloque.s_first_inode + sizeof (objetos::inodo);
+                            super_bloque.s_first_ino = super_bloque.s_first_ino + sizeof (objetos::inodo);
                             super_bloque.s_free_inodes_count--;
                             // CREAR EL JURNALING ***********************************************************************
                             //--------------------------------- obtengo la posicion del journal
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -408,10 +408,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //**********************************************************************************
                         } else {
@@ -429,10 +429,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             // CREAR EL JURNALING ***********************************************************************
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 if (j.estado =='0') {
                                     posJournal =i;
                                 }
@@ -442,10 +442,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             posJournal =-1;
                             posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -472,10 +472,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //**********************************************************************************
                         }
@@ -494,7 +494,7 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                         }
                         //Crear archivo
                         //Verificar si ya existe el archivo, si existe entonces se sobrescribe
-                        int esta = sis->ExisteInodo(super_bloque, file_position, filename,archivo_disco);
+                        int esta = sis -> ExisteInodo(super_bloque, file_position, filename,archivo_disco);
                         if (esta == -1) {
                             MKDIR_->sb_aux = super_bloque;
                             MKDIR_->father_aux = father;
@@ -518,19 +518,19 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             fseek(archivo_disco, posInodo, SEEK_SET);
                             fwrite(&newfile, sizeof (objetos::inodo), 1, archivo_disco);
                             //Modificando bitmap de Inodo
-                            int bipInodo = sis->Posbitmap(super_bloque.s_inode_start, super_bloque.s_first_inode, sizeof (objetos::inodo));
+                            int bipInodo = PosBitmap(super_bloque.s_inode_start, super_bloque.s_first_ino, sizeof (objetos::inodo));
                             int posBit = super_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::bitmap));
-                            sis->Actualizarbitmap(archivo_disco, posBit, '1');
+                            sis -> ActualizarBitmap(archivo_disco, posBit, '1');
                             //Actualizar Super bloque
-                            super_bloque.s_first_inode = super_bloque.s_first_inode + sizeof (objetos::inodo);
+                            super_bloque.s_first_ino = super_bloque.s_first_ino + sizeof (objetos::inodo);
                             super_bloque.s_free_inodes_count--;
                             // CREAR EL JURNALING ***********************************************************************
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 if (j.estado =='0') {
                                     posJournal =i;
                                 }
@@ -540,10 +540,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             posJournal =-1;
                             posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -570,10 +570,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //**********************************************************************************
                         } else {
@@ -594,10 +594,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             // CREAR EL JURNALING ***********************************************************************
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 if (j.estado =='0') {
                                     posJournal =i;
                                 }
@@ -607,10 +607,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                             posJournal =-1;
                             posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -637,10 +637,10 @@ void MKFILE::ejecutar_MKFILE(lista::list * lista , objetos::activeUser * usuario
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                         }
                     }
@@ -693,8 +693,8 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
     int letra = usuario->particion[3];
     MOUNT * nuevo;
     //busca la lista del particiones del disco
-    lista::nodoC * disco_montado = nuevo->buscar_porLetra(letra, lista->first);
-    lista::nodoP * particion= nuevo->buscar_id_exisbloqueApuntadb_poinroobloqueArchivoe(usuario->particion, lista->first);
+    lista::nodoC * disco_montado = nuevo->buscarLetra(letra, lista->first);
+    lista::nodoP * particion= nuevo->buscarExistente(usuario->particion, lista->first);
     if(disco_montado !=NULL){
         FILE * archivo_disco = fopen(disco_montado->path, "rb+");
         if(archivo_disco != NULL){
@@ -732,10 +732,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                 fseek(archivo_disco, file_position, SEEK_SET);
                 fread(&father, sizeof (objetos::inodo), 1, archivo_disco);
             } else {
-                MKDIR::list ruta[n - 1];
+                MKDIR::Lista ruta[n - 1];
                 //Limpiar
                 for (int i = 0; i < n - 1; i++) {
-                    memset(ruta[i].part_carpeta, 0, sizeof (ruta[i].part_carpeta));
+                    memset(ruta[i].carpeta, 0, sizeof (ruta[i].carpeta));
                 }
                 int longPath = strlen(ruta_nArchivo);
                 int k = -1;
@@ -748,7 +748,7 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             break;
                         }
                     } else {
-                        strcpy(ruta[k].part_carpeta, MKDIR_->Concatenar(ruta[k].part_carpeta, ruta_nArchivo[i]));
+                        strcpy(ruta[k].carpeta, MKDIR_->Concatenar(ruta[k].carpeta, ruta_nArchivo[i]));
                     }
                 }
                 //BUSCAR RUTA
@@ -759,7 +759,7 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                         int imposible = 0;
                         int pos_inodo = super_bloque.s_inode_start; //Empezamos buscando desde la raíz.
                         for (int i = 0; i < n - 1; i++) {
-                            int posicion = sis->ExisteInodo(super_bloque, pos_inodo, ruta[i].part_carpeta,archivo_disco);
+                            int posicion = sis -> ExisteInodo(super_bloque, pos_inodo, ruta[i].carpeta,archivo_disco);
                             if (posicion != -1) {
                                 //REVISAR PERMISOS DE ESCRITURA EN LA CARPETA PADRE
                                 objetos::inodo nuevofather;
@@ -788,18 +788,18 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                                 fread(&nuevofather, sizeof (objetos::inodo), 1, archivo_disco);
                                 MKDIR_->sb_aux = super_bloque;
                                 MKDIR_->father_aux = nuevofather;
-                                int pos_nuevo = MKDIR_->CrearInodoArchivo_Carpeta(archivo_disco,ruta[i].part_carpeta, '0', logueado, grupoLogueado,size);
+                                int pos_nuevo = MKDIR_->CrearInodoArchivo_Carpeta(archivo_disco,ruta[i].carpeta, '0', logueado, grupoLogueado,size);
                                 super_bloque = MKDIR_->sb_aux;
                                 nuevofather = MKDIR_->father_aux;
                                 //Actualizar padre
                                 fseek(archivo_disco, pos_inodo, SEEK_SET);
                                 fwrite(&nuevofather, sizeof (objetos::inodo), 1, archivo_disco);
                                 //Modificando bitmap de Inodo
-                                int bipInodo = sis->Posbitmap(super_bloque.s_inode_start, super_bloque.s_first_inode, sizeof (objetos::inodo));
+                                int bipInodo = PosBitmap(super_bloque.s_inode_start, super_bloque.s_first_ino, sizeof (objetos::inodo));
                                 int posBit = super_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::bitmap));
-                                sis->Actualizarbitmap(archivo_disco, posBit, '1');
+                                sis -> ActualizarBitmap(archivo_disco, posBit, '1');
                                 //Actualizar super bloque
-                                super_bloque.s_first_inode = super_bloque.s_first_inode + sizeof (objetos::inodo);
+                                super_bloque.s_first_ino = super_bloque.s_first_ino + sizeof (objetos::inodo);
                                 super_bloque.s_free_inodes_count--;
                                 pos_inodo = pos_nuevo;
                             }
@@ -865,7 +865,7 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                         }
                         //CREAR ARCHIVO
                         //Verificar si ya existe el archivo, si existe entonces se sobrescribe
-                        int esta = sis->ExisteInodo( super_bloque, file_position, filename,archivo_disco);
+                        int esta = sis -> ExisteInodo( super_bloque, file_position, filename,archivo_disco);
                         if (esta == -1) {
                             MKDIR_->sb_aux = super_bloque;
                             MKDIR_->father_aux = father;
@@ -889,21 +889,21 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             fseek(archivo_disco, posInodo, SEEK_SET);
                             fwrite(&newfile, sizeof (objetos::inodo), 1, archivo_disco);
                             //Modificando bitmap de Inodo
-                            int bipInodo = sis->Posbitmap(super_bloque.s_inode_start, super_bloque.s_first_inode, sizeof (objetos::inodo));
+                            int bipInodo = PosBitmap(super_bloque.s_inode_start, super_bloque.s_first_ino, sizeof (objetos::inodo));
                             int posBit = super_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::bitmap));
-                            sis->Actualizarbitmap(archivo_disco, posBit, '1');
+                            sis -> ActualizarBitmap(archivo_disco, posBit, '1');
                             //Actualizar Super bloque
-                            super_bloque.s_first_inode = super_bloque.s_first_inode + sizeof (objetos::inodo);
+                            super_bloque.s_first_ino = super_bloque.s_first_ino + sizeof (objetos::inodo);
                             super_bloque.s_free_inodes_count--;
                             // CREAR EL JURNALING ***********************************************************************
                             //--------------------------------- obtengo la posicion del journal
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -930,10 +930,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //**********************************************************************************
                         } else {
@@ -956,10 +956,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -986,10 +986,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //***********************************************************************************
                         }
@@ -1003,7 +1003,7 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                     if (size == 0) {
                         //Crear Inodo de archivo
                         //Verificar si ya existe el archivo, si existe entonces se sobrescribe
-                        int esta = sis->ExisteInodo(super_bloque, file_position, filename,archivo_disco);
+                        int esta = sis -> ExisteInodo(super_bloque, file_position, filename,archivo_disco);
                         if (esta == -1) {
                             MKDIR_->sb_aux = super_bloque;
                             MKDIR_->father_aux = father;
@@ -1014,21 +1014,21 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             fseek(archivo_disco, file_position, SEEK_SET);
                             fwrite(&father, sizeof (objetos::inodo), 1, archivo_disco);
                             //Modificando bitmap de Inodo
-                            int bipInodo = sis->Posbitmap(super_bloque.s_inode_start, super_bloque.s_first_inode, sizeof (objetos::inodo));
+                            int bipInodo = PosBitmap(super_bloque.s_inode_start, super_bloque.s_first_ino, sizeof (objetos::inodo));
                             int posBit = super_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::bitmap));
-                            sis->Actualizarbitmap(archivo_disco, posBit, '1');
+                            sis -> ActualizarBitmap(archivo_disco, posBit, '1');
                             //Actualizar Super bloque
-                            super_bloque.s_first_inode = super_bloque.s_first_inode + sizeof (objetos::inodo);
+                            super_bloque.s_first_ino = super_bloque.s_first_ino + sizeof (objetos::inodo);
                             super_bloque.s_free_inodes_count--;
                             // CREAR EL JURNALING ***********************************************************************
                             //--------------------------------- obtengo la posicion del journal
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -1054,10 +1054,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //**********************************************************************************
                         } else {
@@ -1075,10 +1075,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             // CREAR EL JURNALING ***********************************************************************
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 if (j.estado =='0') {
                                     posJournal =i;
                                 }
@@ -1088,10 +1088,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             posJournal =-1;
                             posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -1118,10 +1118,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                             //**********************************************************************************
                         }
@@ -1140,7 +1140,7 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                         }
                         //Crear archivo
                         //Verificar si ya existe el archivo, si existe entonces se sobrescribe
-                        int esta = sis->ExisteInodo(super_bloque, file_position, filename,archivo_disco);
+                        int esta = sis -> ExisteInodo(super_bloque, file_position, filename,archivo_disco);
                         if (esta == -1) {
                             MKDIR_->sb_aux = super_bloque;
                             MKDIR_->father_aux = father;
@@ -1164,19 +1164,19 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             fseek(archivo_disco, posInodo, SEEK_SET);
                             fwrite(&newfile, sizeof (objetos::inodo), 1, archivo_disco);
                             //Modificando bitmap de Inodo
-                            int bipInodo = sis->Posbitmap(super_bloque.s_inode_start, super_bloque.s_first_inode, sizeof (objetos::inodo));
+                            int bipInodo = PosBitmap(super_bloque.s_inode_start, super_bloque.s_first_ino, sizeof (objetos::inodo));
                             int posBit = super_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::bitmap));
-                            sis->Actualizarbitmap(archivo_disco, posBit, '1');
+                            sis -> ActualizarBitmap(archivo_disco, posBit, '1');
                             //Actualizar Super bloque
-                            super_bloque.s_first_inode = super_bloque.s_first_inode + sizeof (objetos::inodo);
+                            super_bloque.s_first_ino = super_bloque.s_first_ino + sizeof (objetos::inodo);
                             super_bloque.s_free_inodes_count--;
                             // CREAR EL JURNALING ***********************************************************************
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 if (j.estado =='0') {
                                     posJournal =i;
                                 }
@@ -1186,10 +1186,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                                posJournal =-1;
                                posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                               int a=0;
-                              for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                  objetos::Journal j ;
+                              for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                  objetos::journal j ;
                                   fseek(archivo_disco, i, SEEK_SET);
-                                  fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                  fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                   a++;
                                   if (j.estado =='0') {
                                       posJournal =i ;
@@ -1216,10 +1216,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                                       strcpy(comando," -cont=");
                                       strcat(comando,cont_ruta);
                                   }
-                                  objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                  journal = sis->CrearJornal(usuario->user,comando);
+                                  objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                  journal = sis -> CrearJornal(usuario->user,comando);
                                   fseek(archivo_disco, posJournal, SEEK_SET);
-                                  fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                  fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                               }
                             //**********************************************************************************
                         } else {
@@ -1240,10 +1240,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             // CREAR EL JURNALING ***********************************************************************
                             int posJournal =-1;
                             int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 if (j.estado =='0') {
                                     posJournal =i;
                                 }
@@ -1253,10 +1253,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                             posJournal =-1;
                             posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                             int a=0;
-                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::Journal)) {
-                                objetos::Journal j ;
+                            for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                                objetos::journal j ;
                                 fseek(archivo_disco, i, SEEK_SET);
-                                fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                                fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                                 a++;
                                 if (j.estado =='0') {
                                     posJournal =i ;
@@ -1283,10 +1283,10 @@ void MKFILE::ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuari
                                     strcpy(comando," -cont=");
                                     strcat(comando,cont_ruta);
                                 }
-                                objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
-                                journal = sis->CrearJornal(usuario->user,comando);
+                                objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
+                                journal = sis -> CrearJornal(usuario->user,comando);
                                 fseek(archivo_disco, posJournal, SEEK_SET);
-                                fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                                fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                             }
                                //**********************************************************************************
                         }
@@ -1326,4 +1326,8 @@ int MKFILE::ContadorTipoPunto(char *string) {
     int c = 0;
     while (*string) c += *(string++) == '.';
         return c;
+}
+int MKFILE::PosBitmap(int inicio, int max, int tamanio) {
+    int a = ((max - inicio) / tamanio);
+    return a;
 }

@@ -1,6 +1,6 @@
 #include "LOGIN.h"
 
-LOGIN::login()
+LOGIN::LOGIN()
 {
     memset(user, 0, 15);
     memset(pwd, 0, 15);
@@ -40,19 +40,19 @@ objetos::superBloque LOGIN::obtener_SuperBlock(FILE * archivo_disco, char * name
     fread(&mbr,sizeof(objetos::MBR),1,archivo_disco);
     //Obtengo la particion donde se formateara el sistema de archivos.
     for(int i=0; i<4; i++){
-        if(strcmp(mbr.mbr_particion[i].part_name, name)==0){
+        if(strcmp(mbr.mbr_partitions[i].part_name, name)==0){
             pos_part = i;
             break;
         }
     }
     if(pos_part != -1){
-        int inicio_particion = mbr.mbr_particion[pos_part].part_start;
+        int inicio_particion = mbr.mbr_partitions[pos_part].part_start;
         fseek(archivo_disco,inicio_particion,SEEK_SET);
         fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_disco);
     }
     return super_bloque;
 }
-void LOGIN::ejecutar_login(particioneslist::lista * lista , objetos::user_activo * usuario){
+void LOGIN::ejecutar_LOGIN(lista::list * lista , objetos::activeUser * usuario){
     if(usuario->estado !=-1){
         cout << "Error, ya existe una sesion iniciada" << endl;
         return;
@@ -67,9 +67,9 @@ void LOGIN::ejecutar_login(particioneslist::lista * lista , objetos::user_activo
     int long_id = strlen(id);
     int letra = id[3];
     MOUNT * nuevo;
-    particioneslist::nodoC * disco_montado = nuevo->buscar_porLetra(letra, lista->first); //busca la lista del particiones del disco
+    lista::nodoC * disco_montado = nuevo->buscarLetra(letra, lista->first); //busca la lista del particiones del disco
     if(disco_montado != NULL){
-        particioneslist::nodoP * particion= nuevo->buscar_id_existente(id, lista->first);
+        lista::nodoP * particion= nuevo->buscarExistente(id, lista->first);
         if(particion!= NULL){
             FILE * archivo_disco = fopen(disco_montado->path, "rb+");
             if(archivo_disco != NULL){
@@ -210,10 +210,10 @@ char* LOGIN::ObtenerTexto(FILE *fp, objetos::superBloque super, objetos::inodo *
     memset(Texto, 0, 64);
     /* Apuntadores directos*/
     for (int i = 0; i < 12; i++) {
-        if (node->i_block[i] != -1) {
+        if (node->block[i] != -1) {
             contador++;
             objetos::bloqueArchivo *B_file = (objetos::bloqueArchivo*) malloc(sizeof (objetos::bloqueArchivo));
-            fseek(fp, super.block_start + (node->i_block[i] * sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
+            fseek(fp, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
             fread(B_file, sizeof (objetos::bloqueArchivo), 1, fp); //Recupero el bloque de Archivo
             strcat(Texto, B_file->b_content);
         } else {
@@ -221,16 +221,16 @@ char* LOGIN::ObtenerTexto(FILE *fp, objetos::superBloque super, objetos::inodo *
         }
     }
     /*Apuntador Indirecto Simple*/
-    if (node->i_block[12] != -1) { //Si está en uso
+    if (node->block[12] != -1) { //Si está en uso
         //Leer el bloque
         objetos::bloqueApuntadores *B_pointer = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-        fseek(fp, super.block_start + (node->i_block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET);
+        fseek(fp, super.s_block_start + (node->block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET);
         fread(B_pointer, sizeof (objetos::bloqueApuntadores), 1, fp);
         for (int i = 0; i < 16; i++) {
-            if (B_pointer->pointers[i] != -1) {
+            if (B_pointer->b_pointers[i] != -1) {
                 contador++;
                 objetos::bloqueArchivo *B_file = (objetos::bloqueArchivo*) malloc(sizeof (objetos::bloqueArchivo));
-                fseek(fp, super.block_start + (B_pointer->pointers[i] + sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
+                fseek(fp, super.s_block_start + (B_pointer->b_pointers[i] + sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
                 fread(B_file, sizeof (objetos::bloqueArchivo), 1, fp); //Recupero el bloque de Archivo
                 strcat(Texto, B_file->b_content);
             } else {

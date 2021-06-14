@@ -8,24 +8,24 @@
 #include <MOUNT.h>
 #include <fs.h>
 #include "LOGIN.h"
-#include "Mkdir.h"
+#include "MKDIR.h"
 
 using namespace std;
 
-class mkgrp
+class MKGRP
 {
 public:
-    mkgrp();
+    MKGRP();
     char nombre[10];
-        char password[10];
-        char * grupo;
-        int tipo; // 1 para grupo / 2 para usuario
-        bool par_usr;
-        bool par_pwd;
-        bool par_grp;
-        void limpiar();
-        void ejecutar(objetos::activeUser * usuario, lista::list * lista );
-        void ejecutar_mkgrp(objetos::activeUser * usuario,lista::list * lista );
-        void ejecutar_mkusr(objetos::activeUser * usuario,lista::list * lista );
+    char password[10];
+    char * grupo;
+    int tipo; // 1 para grupo / 2 para usuario
+    bool par_usr;
+    bool par_pwd;
+    bool par_grp;
+    void limpiar();
+    void ejecutar(objetos::activeUser * usuario, lista::list * lista );
+    void ejecutar_mkgrp(objetos::activeUser * usuario,lista::list * lista );
+    void ejecutar_mkusr(objetos::activeUser * usuario,lista::list * lista );
 };
 #endif // MKGRP_H

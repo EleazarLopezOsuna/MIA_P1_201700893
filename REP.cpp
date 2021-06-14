@@ -16,44 +16,44 @@ void REP::limpiar(){
 }
 void REP::ejecutar_REP(lista::list * lista, objetos::REP rep){
     int letra = rep.id[3];
-    mount * nuevo;
-    lista::nodoC * temp = nuevo->buscar_porLetra(letra, lista->primero);
+    MOUNT * nuevo;
+    lista::nodoC * temp = nuevo->buscarLetra(letra, lista->first);
     if(temp != NULL){
-        lista::nodoP * particion = nuevo->buscar_id2(rep, lista->primero);
+        lista::nodoP * particion = nuevo->buscar_id(rep, lista->first);
         if(particion!= NULL){
-            if(rep.isMbr == 1){
+            if(rep.f_mbr == 1){
                 graficar_MBR(temp->path, rep);
-            }else if(rep.isDisk ==1){
+            }else if(rep.f_disk ==1){
                 graficar_Disk(temp->path, rep);
             }else{
                 // revisar la variable para reportes de la fase 2
-                if(rep.rep2==1){ //reporte sb
+                if(rep.f_rep==1){ //reporte sb
                     getRuta(temp->path);
                     rep_sb(temp->path,particion);
-                }else if(rep.rep2==2){ // -> reporte file
+                }else if(rep.f_rep==2){ // -> reporte file
                     getRuta(temp->path);
                     rep_file(temp->path,particion);
-                }else if(rep.rep2==3){ //-> reporte bitmap de inodos
+                }else if(rep.f_rep==3){ //-> reporte bitmap de inodos
                     getRuta(temp->path);
                     rep_bm_inodes(temp->path,particion);
-                }else if(rep.rep2==4){ //-> reporte bitmap de blokes
+                }else if(rep.f_rep==4){ //-> reporte bitmap de blokes
                     getRuta(temp->path);
                     rep_bm_blockes(temp->path,particion);
-                }else if(rep.rep2==5){ // -> reporte de inodos
+                }else if(rep.f_rep==5){ // -> reporte de inodos
                     getRuta(temp->path);
                     rep_inodos(temp->path,particion);
-                }else if(rep.rep2==6){ // -> reporte tree
+                }else if(rep.f_rep==6){ // -> reporte tree
                     ofstream outfile(ruta_reporte);
                     outfile.close();
                     getRuta(temp->path);
                     rep_arbol(temp->path,particion);
-                }else if(rep.rep2==7){ // -> reporte de bloques
+                }else if(rep.f_rep==7){ // -> reporte de bloques
                     getRuta(temp->path);
                     rep_bloques(temp->path,particion);
-                }else if(rep.rep2==8){ // -> reporte journal
+                }else if(rep.f_rep==8){ // -> reporte journal
                     getRuta(temp->path);
                     rep_journal(temp->path,particion);
-                }else if(rep.rep2==9){ // -> reporte ls
+                }else if(rep.f_rep==9){ // -> reporte ls
                     getRuta(temp->path);
                     rep_ls(temp->path,particion);
                 }
@@ -63,6 +63,13 @@ void REP::ejecutar_REP(lista::list * lista, objetos::REP rep){
             cout << "Error, la particion no esta montada" << endl;
         }
     }
+}
+char* REP::get_Fecha(time_t time)
+{
+    char* fecha_hora = (char*) malloc(sizeof (char)*128);
+    struct tm *tiempo_local = localtime(&time);
+    strftime(fecha_hora, 128, "%d/%m/%y %H:%M", tiempo_local);
+    return fecha_hora;
 }
 void REP::graficar_MBR(char path[255], objetos::REP rep){
     char ejecutarDot[1024];
@@ -74,16 +81,16 @@ void REP::graficar_MBR(char path[255], objetos::REP rep){
         ruta[i] = '\0';
     }
     MKDISK * nuevo = new MKDISK();
-    objetos::MBR mbr = nuevo->crear_mbr(0);
+    objetos::MBR mbr = nuevo->crearMBR(0);
     objetos::EBR ebr;
-    ebr.next =-1;
+    ebr.part_next =-1;
     getRuta(path);
     DIR* directorio = opendir(ruta_disco);
     int existe_dir =0;
     if (directorio) {
         existe_dir++;
     }else if (ENOENT == errno) {
-        if(MKDIR(ruta_disco, 0777) != -1){
+        if(mkdir(ruta_disco, 0777) != -1){
             existe_dir++;
         }
     }
@@ -102,7 +109,7 @@ void REP::graficar_MBR(char path[255], objetos::REP rep){
             }
         }
         fclose(archivo_mbr);
-        char * fecchita = nuevo->get_Fecha(mbr.fecha_creacion);
+        char * fecchita = get_Fecha(mbr.mbr_fecha_creacion);
         int size = mbr.mbr_tamano;
         int sig = mbr.mbr_disk_signature;
         char fit = mbr.mbr_disk_fit;
@@ -180,10 +187,10 @@ void REP::graficar_MBR(char path[255], objetos::REP rep){
         fread(&ebr,sizeof(objetos::EBR), 1, archivo_mbr);
         objetos::EBR temp = ebr;
         if(ext==0){
-            temp.next=-1;
+            temp.part_next=-1;
         }
         int contador_ebr=0;
-        while(temp.next != -1){
+        while(temp.part_next != -1){
             contador_ebr++;
             fprintf(doc,"      tbl%d [ shape=plaintext \n",contador_ebr);
             fprintf(doc,"   label=< \n");
@@ -192,35 +199,35 @@ void REP::graficar_MBR(char path[255], objetos::REP rep){
             fprintf(doc,"       <tr><td cellpadding=\"4\"><b> Nombre </b></td> <td cellpadding=\"4\"><b>Valor </b></td></tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_status_1</b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %c </td> \n", temp.status);
+            fprintf(doc,"           <td cellpadding=\"4\"> %c </td> \n", temp.part_status);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_fit_1</b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %c </td> \n",temp.fit);
+            fprintf(doc,"           <td cellpadding=\"4\"> %c </td> \n",temp.part_fit);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_start_1</b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.start);
+            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.part_start);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_size_1 </b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.size);
+            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.part_size);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_next_1 </b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.next);
+            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.part_next);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_name_1 </b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %s </td> \n", temp.name);
+            fprintf(doc,"           <td cellpadding=\"4\"> %s </td> \n", temp.part_name);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"   </table> \n");
             fprintf(doc," >]; \n");
-            fseek(archivo_mbr, temp.next, SEEK_SET);
+            fseek(archivo_mbr, temp.part_next, SEEK_SET);
             fread(&temp,sizeof(objetos::EBR),1, archivo_mbr);
         }
         contador_ebr++;
-        if(temp.next == -1 && ext !=0){
+        if(temp.part_next == -1 && ext !=0){
             fprintf(doc,"      tbl%d [ shape=plaintext \n",contador_ebr);
             fprintf(doc,"   label=< \n");
             fprintf(doc,"   <table border= \"0\" cellborder=\"1\" color=\"#9121B0\" cellspacing=\"0\"> \n");
@@ -228,27 +235,27 @@ void REP::graficar_MBR(char path[255], objetos::REP rep){
             fprintf(doc,"       <tr><td cellpadding=\"4\"><b> Nombre </b></td> <td cellpadding=\"4\"><b>Valor </b></td></tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_status_1</b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %c </td> \n", temp.status);
+            fprintf(doc,"           <td cellpadding=\"4\"> %c </td> \n", temp.part_status);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_fit_1</b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %c </td> \n",temp.fit);
+            fprintf(doc,"           <td cellpadding=\"4\"> %c </td> \n",temp.part_fit);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_start_1</b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.start);
+            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.part_start);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_size_1 </b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.size);
+            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.part_size);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_next_1 </b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.next);
+            fprintf(doc,"           <td cellpadding=\"4\"> %d </td> \n", temp.part_next);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"       <tr> \n");
             fprintf(doc,"           <td cellpadding=\"4\"><b> part_name_1 </b> </td> \n");
-            fprintf(doc,"           <td cellpadding=\"4\"> %s </td> \n", temp.name);
+            fprintf(doc,"           <td cellpadding=\"4\"> %s </td> \n", temp.part_name);
             fprintf(doc,"       </tr> \n");
             fprintf(doc,"   </table> \n");
             fprintf(doc," >]; \n");
@@ -308,7 +315,7 @@ void REP::graficar_Disk(char path[255], objetos::REP rep){
     if (directorio) {
         existe_dir++;
     }else if (ENOENT == errno) {
-        if(MKDIR(ruta_disco, 0777) != -1){
+        if(mkdir(ruta_disco, 0777) != -1){
             existe_dir++;
         }
     }
@@ -361,25 +368,24 @@ void REP::graficar_Disk(char path[255], objetos::REP rep){
                     fprintf(doc_disk,"               <tr><td  colspan=\"50\"><b>Extendida</b></td></tr> \n");
                     fprintf(doc_disk,"               <tr> \n");
                     if(ebr.part_status == '4'){
-                        double libre = 100;
                         fprintf(doc_disk,"                   <td>EBR</td> \n");
                         fprintf(doc_disk,"                   <td>Libre<br/><font color=\"#5A6571\" >100% del disco</font></td> \n");
                     }else{
                         //Es una logica
-                        while(temp.next != -1 && temp.next != 0 ){
-                            if(temp.status == '0'){
-                                porcentaje_usado_ex = obtenerPorcentaje((double)temp.start, (double)temp.size, (double)mbr.mbr_tamano);
+                        while(temp.part_next != -1 && temp.part_next != 0 ){
+                            if(temp.part_status == '0'){
+                                porcentaje_usado_ex = obtenerPorcentaje((double)temp.part_start, (double)temp.part_size, (double)mbr.mbr_tamano);
                                 porcentaje_total_ex = porcentaje_usado_ex + porcentaje_total_ex;
                                 fprintf(doc_disk,"                   <td>EBR</td> \n");
                                 fprintf(doc_disk,"                   <td>  Libre <br/><font color=\"#5A6571\" > </font></td> \n");
-                                fseek(archivo_disco, temp.next, SEEK_SET);
+                                fseek(archivo_disco, temp.part_next, SEEK_SET);
                                 fread(&temp,sizeof(objetos::EBR),1, archivo_disco);
                             }else{
-                                porcentaje_usado_ex = obtenerPorcentaje((double)temp.start, (double)temp.size, (double)mbr.mbr_tamano);
+                                porcentaje_usado_ex = obtenerPorcentaje((double)temp.part_start, (double)temp.part_size, (double)mbr.mbr_tamano);
                                 porcentaje_total_ex = porcentaje_usado_ex + porcentaje_total_ex;
                                 fprintf(doc_disk,"                   <td>EBR</td> \n");
-                                fprintf(doc_disk,"                   <td>Logica<br/> %s <br/><font color=\"#5A6571\" > %.2f  del disco</font></td> \n",temp.name ,porcentaje_usado_ex);
-                                fseek(archivo_disco, temp.next, SEEK_SET);
+                                fprintf(doc_disk,"                   <td>Logica<br/> %s <br/><font color=\"#5A6571\" > %.2f  del disco</font></td> \n",temp.part_name ,porcentaje_usado_ex);
+                                fseek(archivo_disco, temp.part_next, SEEK_SET);
                                 fread(&temp,sizeof(objetos::EBR),1, archivo_disco);
                             }
                         }
@@ -393,7 +399,6 @@ void REP::graficar_Disk(char path[255], objetos::REP rep){
                     fprintf(doc_disk,"       </td> \n");
                     fclose(archivo_disco);
                 }else{
-                    double libre = (double)((100 - porcentaje_total)/part_libres);
                     fprintf(doc_disk,"        <td>  <b>Libre</b> <font color=\"#5A6571\" >   </font></td> \n");
                     todo_libre++;
                 }
@@ -423,7 +428,6 @@ void REP::graficar_Disk(char path[255], objetos::REP rep){
     }
 }
 double REP::obtenerPorcentaje(double posicion_inicio, double posicion_fin, double tamanio_mbr) {
-    double tamanio_real = posicion_fin - posicion_inicio;
     int resultado = (int) ((posicion_fin * 100) / tamanio_mbr);
     return resultado;
 }
@@ -432,9 +436,7 @@ void REP::rep_ls(char path[255],lista::nodoP * particion){
     char ruta[255];
     memset(ejecutarDot,'\0',1024);
     memset(ruta,'\0',255);
-    int Posicion = 0;
     //Verificar si es archivo
-    MKFILE * mkf = new MKFILE();
     MKDIR * mkd = new MKDIR();
     FILE *fp1;
     fp1 = fopen(path, "rb+");
@@ -454,9 +456,9 @@ void REP::rep_ls(char path[255],lista::nodoP * particion){
         }
     }
     //RECUPERANDO SUPER BLOQUE DE PARTICIÓN
-    objetos::Super_Bolque super ;
+    objetos::superBloque super ;
     fseek(fp1, masterBoot->mbr_partitions[i].part_start, SEEK_SET);
-    fread(&super, sizeof ( objetos::Super_Bolque), 1, fp1);
+    fread(&super, sizeof ( objetos::superBloque), 1, fp1);
     objetos::inodo *father = (objetos::inodo*) malloc(sizeof (objetos::inodo));
     int inode_position;
     int n = mkd->ContadorBarras(ruta_archivo);
@@ -466,7 +468,7 @@ void REP::rep_ls(char path[255],lista::nodoP * particion){
         fseek(fp1, inode_position, SEEK_SET);
         fread(father, sizeof (objetos::inodo), 1, fp1);
     } else {
-        MKDIR::list ruta2[n - 1];
+        MKDIR::Lista ruta2[n - 1];
         //Limpiar
         for (int i = 0; i < n - 1; i++) {
             memset(ruta2[i].carpeta, 0, sizeof (ruta2[i].carpeta));
@@ -503,8 +505,8 @@ void REP::rep_ls(char path[255],lista::nodoP * particion){
     char filename[50];
     memset(filename, 0, sizeof (filename));
     strcpy(filename, basename(ts1)); //Obteniendo nombre de archivo o carpeta
-    FS * sis = new FS();
-    int pos_object = sis->Existeinodo( super, inode_position, filename,fp1);
+    fs * sis = new fs();
+    int pos_object = sis->ExisteInodo( super, inode_position, filename,fp1);
     char foldername[50];
     memset(foldername, 0, sizeof (foldername));
     strcpy(foldername, basename(ruta_archivo));
@@ -540,9 +542,9 @@ void REP::rep_ls(char path[255],lista::nodoP * particion){
             fprintf(doc, "</td> \n");
         //************* fecha
             MKDISK * nuevo = new MKDISK();
-            objetos::MBR mbr = nuevo->crear_mbr(0);
+            objetos::MBR mbr = nuevo->crearMBR(0);
             fprintf(doc, "<td>");
-            fprintf(doc,"%s",nuevo->get_Fecha(inodoArchivo.i_ctime));
+            fprintf(doc,"%s",get_Fecha(inodoArchivo.i_ctime));
             fprintf(doc, "</td> \n");
         //************ tipo
             fprintf(doc, "<td>");
@@ -574,7 +576,6 @@ void REP::rep_ls(char path[255],lista::nodoP * particion){
     fclose(fp1);
 }
 void REP::rep_file(char path[255],lista::nodoP * particion){
-    int Posicion = 0;
     char ejecutarDot[1024];
     char ruta[255];
         for (int i = 0; i < 1024; i++) {
@@ -609,9 +610,9 @@ void REP::rep_file(char path[255],lista::nodoP * particion){
         }
     }
     //RECUPERANDO SUPER BLOQUE DE PARTICIÓN
-    objetos::Super_Bolque super ;
+    objetos::superBloque super ;
     fseek(fp1, masterBoot->mbr_partitions[i].part_start, SEEK_SET);
-    fread(&super, sizeof ( objetos::Super_Bolque), 1, fp1);
+    fread(&super, sizeof ( objetos::superBloque), 1, fp1);
     objetos::inodo *father = (objetos::inodo*) malloc(sizeof (objetos::inodo));
     int inode_position;
     int n = mkd->ContadorBarras(ruta_archivo);
@@ -621,7 +622,7 @@ void REP::rep_file(char path[255],lista::nodoP * particion){
         fseek(fp1, inode_position, SEEK_SET);
         fread(father, sizeof (objetos::inodo), 1, fp1);
     } else {
-        MKDIR::list ruta2[n - 1];
+        MKDIR::Lista ruta2[n - 1];
         //Limpiar
         for (int i = 0; i < n - 1; i++) {
             memset(ruta2[i].carpeta, 0, sizeof (ruta2[i].carpeta));
@@ -658,8 +659,8 @@ void REP::rep_file(char path[255],lista::nodoP * particion){
     char filename[50];
     memset(filename, 0, sizeof (filename));
     strcpy(filename, basename(ts1)); //Obteniendo nombre de archivo o carpeta
-    FS * sis = new FS();
-    int pos_object = sis->Existeinodo( super, inode_position, filename,fp1);
+    fs * sis = new fs();
+    int pos_object = sis->ExisteInodo( super, inode_position, filename,fp1);
     if (pos_object != -1) {
         //inodo de archivo
         objetos::inodo inodoArchivo;
@@ -699,7 +700,7 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
     }
     // creo el mbr donde guardare los datos del mbr del disco
     MKDISK * nuevo = new MKDISK();
-    objetos::MBR mbr = nuevo->crear_mbr(0);
+    objetos::MBR mbr = nuevo->crearMBR(0);
     DIR* directorio = opendir(ruta_disco);
     int existe_dir =0;
     if (directorio) {
@@ -708,7 +709,6 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
        printf("**LAS CARPETAS DEL DISCO NO EXISTEN ** %s \n", path);
     }
     if(existe_dir!=0){
-        double size_patition = 0.0;
         FILE *archivo_mbr;
         archivo_mbr = fopen(path, "rb+");
         //leer mbr
@@ -727,10 +727,10 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
             }
         }
         //si se encontro la particion en el mbr del disco se prosede a ubicarse en el inicio de la particion y se lee el super bloque
-        objetos::Super_Bolque super_bloque;
+        objetos::superBloque super_bloque;
         if(num_particion!=-1){
             fseek(archivo_mbr,mbr.mbr_partitions[num_particion].part_start,SEEK_SET);
-            fread(&super_bloque,sizeof(objetos::Super_Bolque),1,archivo_mbr);
+            fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_mbr);
         }else{
             cout<<" **ERROR: no se encontro la particion en el disco"<<endl;
             return;
@@ -764,15 +764,15 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_mtime</b> </td> \n");
-            fprintf(doc_sb,"           <td cellpadding=\"4\"> %s </td> \n", nuevo->get_Fecha(super_bloque.s_mount_time));
+            fprintf(doc_sb,"           <td cellpadding=\"4\"> %s </td> \n", get_Fecha(super_bloque.s_mtime));
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_umtime</b> </td> \n");
-            fprintf(doc_sb,"           <td cellpadding=\"4\"> %s </td> \n", nuevo->get_Fecha(super_bloque.s_unmount_time));
+            fprintf(doc_sb,"           <td cellpadding=\"4\"> %s </td> \n", get_Fecha(super_bloque.s_umtime));
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_mnt_count</b> </td> \n");
-            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_mount_count);
+            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_mnt_count);
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_magic</b> </td> \n");
@@ -788,19 +788,19 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_first:ino</b> </td> \n");
-            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_first_inode);
+            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_first_ino);
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_first_block</b> </td> \n");
-            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_first_block);
+            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_first_blo);
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_bm_inode_start</b> </td> \n");
-            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_bitmap_inode_start);
+            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_bm_inode_start);
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_bm_block_start</b> </td> \n");
-            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_bitmap_block_start);
+            fprintf(doc_sb,"           <td cellpadding=\"4\"> %d </td> \n", super_bloque.s_bm_block_start);
             fprintf(doc_sb,"       </tr> \n");
             fprintf(doc_sb,"       <tr> \n");
             fprintf(doc_sb,"           <td cellpadding=\"4\"><b> s_inode_start</b> </td> \n");
@@ -841,7 +841,7 @@ void REP::rep_bm_inodes(char path[255], lista::nodoP*particion){
     }
     // creo el mbr donde guardare los datos del mbr del disco
     MKDISK * nuevo = new MKDISK();
-    objetos::MBR mbr = nuevo->crear_mbr(0);
+    objetos::MBR mbr = nuevo->crearMBR(0);
     DIR* directorio = opendir(ruta_disco);
     int existe_dir =0;
     if (directorio) {
@@ -850,7 +850,6 @@ void REP::rep_bm_inodes(char path[255], lista::nodoP*particion){
        printf("**LAS CARPETAS DEL DISCO NO EXISTEN ** %s \n", path);
     }
     if(existe_dir!=0){
-        double size_patition = 0.0;
         FILE *archivo_mbr;
         archivo_mbr = fopen(path, "rb+");
         //leer mbr
@@ -869,10 +868,10 @@ void REP::rep_bm_inodes(char path[255], lista::nodoP*particion){
              }
          }
         //si se encontro la particion en el mbr del disco se prosede a ubicarse en el inicio de la particion y se lee el super bloque
-        objetos::Super_Bolque super_bloque;
+        objetos::superBloque super_bloque;
         if(num_particion!=-1){
             fseek(archivo_mbr,mbr.mbr_partitions[num_particion].part_start,SEEK_SET);
-            fread(&super_bloque,sizeof(objetos::Super_Bolque),1,archivo_mbr);
+            fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_mbr);
         }else{
             cout<<" **ERROR: no se encontro la particion en el disco"<<endl;
             return;
@@ -886,14 +885,13 @@ void REP::rep_bm_inodes(char path[255], lista::nodoP*particion){
                 cout<<"NO ES POSIBLE ABRIR EL ARCHIVO"<<endl;
                 return;
             }
-            int inicio_bloques = super_bloque.s_bitmap_inode_start;
+            int inicio_bloques = super_bloque.s_bm_inode_start;
             int numero_bloques = super_bloque.s_inodes_count;
             fseek(archivo_mbr,inicio_bloques,SEEK_SET);
-            char s[1]={'s'};
-            objetos::Bitmap *bip = (objetos::Bitmap*) malloc(sizeof (objetos::Bitmap));
+            objetos::bitmap *bip = (objetos::bitmap*) malloc(sizeof (objetos::bitmap));
             int contador=0;
             for(int i=0; i < numero_bloques; i++){
-                fread(bip, sizeof (objetos::Bitmap), 1, archivo_mbr);
+                fread(bip, sizeof (objetos::bitmap), 1, archivo_mbr);
                 if (contador < 20) {
                     if (bip->state == '0') {
                             archivo_reporte<<bip->state;
@@ -936,7 +934,7 @@ void REP::rep_bm_blockes(char path[255], lista::nodoP*particion){
     }
     // creo el mbr donde guardare los datos del mbr del disco
     MKDISK * nuevo = new MKDISK();
-    objetos::MBR mbr = nuevo->crear_mbr(0);
+    objetos::MBR mbr = nuevo->crearMBR(0);
     DIR* directorio = opendir(ruta_disco);
     int existe_dir =0;
     if (directorio) {
@@ -964,10 +962,10 @@ void REP::rep_bm_blockes(char path[255], lista::nodoP*particion){
             }
         }
         //si se encontro la particion en el mbr del disco se prosede a ubicarse en el inicio de la particion y se lee el super bloque
-        objetos::Super_Bolque super_bloque;
+        objetos::superBloque super_bloque;
         if(num_particion!=-1){
             fseek(archivo_mbr,mbr.mbr_partitions[num_particion].part_start,SEEK_SET);
-            fread(&super_bloque,sizeof(objetos::Super_Bolque),1,archivo_mbr);
+            fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_mbr);
         }else{
             cout<<" **ERROR: no se encontro la particion en el disco"<<endl;
             return;
@@ -977,14 +975,14 @@ void REP::rep_bm_blockes(char path[255], lista::nodoP*particion){
             //crear archivo del reporte
             FILE *archivo_reporte;
             archivo_reporte = fopen(ruta_reporte, "w");
-            int inicio_bloques = super_bloque.s_bitmap_block_start;
+            int inicio_bloques = super_bloque.s_bm_block_start;
             int numero_bloques = super_bloque.s_blocks_count;
             fseek(archivo_mbr,inicio_bloques,SEEK_SET);
             fseek(archivo_reporte,0,SEEK_SET);
-            objetos::Bitmap *bip = (objetos::Bitmap*) malloc(sizeof (objetos::Bitmap));
+            objetos::bitmap *bip = (objetos::bitmap*) malloc(sizeof (objetos::bitmap));
             int contador=0;
             for(int i=0; i < numero_bloques; i++){
-                fread(bip, sizeof (objetos::Bitmap), 1, archivo_mbr);
+                fread(bip, sizeof (objetos::bitmap), 1, archivo_mbr);
                 if (contador < 20) {
                     if (bip->state != 'C' && bip->state != 'A' && bip->state != 'P') {
                       fprintf(archivo_reporte, "%c", '0');
@@ -1023,7 +1021,7 @@ void REP::rep_inodos( char path[255],lista::nodoP * particion ){
     }
     // creo el mbr donde guardare los datos del mbr del disco
     MKDISK * nuevo = new MKDISK();
-    objetos::MBR mbr = nuevo->crear_mbr(0);
+    objetos::MBR mbr = nuevo->crearMBR(0);
     DIR* directorio = opendir(ruta_disco);
     int existe_dir =0;
     if (directorio) {
@@ -1052,10 +1050,10 @@ void REP::rep_inodos( char path[255],lista::nodoP * particion ){
             }
         }
         //si se encontro la particion en el mbr del disco se prosede a ubicarse en el inicio de la particion y se lee el super bloque
-        objetos::Super_Bolque super_bloque;
+        objetos::superBloque super_bloque;
         if(num_particion!=-1){
             fseek(archivo_mbr,mbr.mbr_partitions[num_particion].part_start,SEEK_SET);
-            fread(&super_bloque,sizeof(objetos::Super_Bolque),1,archivo_mbr);
+            fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_mbr);
         }else{
             cout<<" **ERROR: no se encontro la particion en el disco"<<endl;
             return;
@@ -1073,7 +1071,7 @@ void REP::rep_inodos( char path[255],lista::nodoP * particion ){
             fprintf(doc, "        style= filled\n");
             fprintf(doc, "        shape = box\n");
             fprintf(doc, "    ]\n");
-            Cuerpoinodos(super_bloque, 0, super_bloque.s_inode_start , archivo_mbr,doc);
+            CuerpoInodos(super_bloque, 0, super_bloque.s_inode_start , archivo_mbr,doc);
             flechas_inodos(super_bloque, doc);
             fprintf(doc, "}\n");
             fclose(doc);
@@ -1092,7 +1090,7 @@ void REP::rep_inodos( char path[255],lista::nodoP * particion ){
         }
     }
 }
-void REP::Cuerpoinodos(objetos::Super_Bolque super, int noinodo, int pos_inode, FILE *archivo, FILE * fp) {
+void REP::CuerpoInodos(objetos::superBloque super, int noinodo, int pos_inode, FILE *archivo, FILE * fp) {
     //Obtener el inodo
     objetos::inodo *node = (objetos::inodo*) malloc(sizeof (objetos::inodo));
     fseek(archivo, pos_inode, SEEK_SET);
@@ -1126,15 +1124,15 @@ void REP::Cuerpoinodos(objetos::Super_Bolque super, int noinodo, int pos_inode, 
     contador++;
     /*Apuntadores directos*/
     for (int i = 0; i < 12; i++) {
-        fprintf(fp, "|<f%d>APD%d :  %d\n", contador, i, node->i_block[i]);
+        fprintf(fp, "|<f%d>APD%d :  %d\n", contador, i, node->block[i]);
         contador++;
     }
     /*Apuntadores indirectos*/
-    fprintf(fp, "|<f%d>APIS%d :          %d\n", contador, 12, node->i_block[12]);
+    fprintf(fp, "|<f%d>APIS%d :          %d\n", contador, 12, node->block[12]);
     contador++;
-    fprintf(fp, "|<f%d>APID%d :          %d\n", contador, 13, node->i_block[13]);
+    fprintf(fp, "|<f%d>APID%d :          %d\n", contador, 13, node->block[13]);
     contador++;
-    fprintf(fp, "|<f%d>APIT%d :          %d\n", contador, 14, node->i_block[14]);
+    fprintf(fp, "|<f%d>APIT%d :          %d\n", contador, 14, node->block[14]);
     contador++;
     fprintf(fp, "\" shape = \"Mrecord\" ];\n");
     //Recursividad
@@ -1142,9 +1140,9 @@ void REP::Cuerpoinodos(objetos::Super_Bolque super, int noinodo, int pos_inode, 
         /*Recorrer apuntadores directos*/
         int inicio;
         for (int i = 0; i < 12; i++) {
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 objetos::bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                 fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
                 if (i == 0) {
                     inicio = 2;
@@ -1153,15 +1151,15 @@ void REP::Cuerpoinodos(objetos::Super_Bolque super, int noinodo, int pos_inode, 
                 }
                 for (int j = inicio; j < 4; j++) {
                     if (folder_block->b_content[j].b_inodo != -1) { //Que apunta a un inodo
-                        Cuerpoinodos(super, folder_block->b_content[j].b_inodo, super.s_inode_start + (folder_block->b_content[j].b_inodo * sizeof (objetos::inodo)), archivo, fp);
+                        CuerpoInodos(super, folder_block->b_content[j].b_inodo, super.s_inode_start + (folder_block->b_content[j].b_inodo * sizeof (objetos::inodo)), archivo, fp);
                     }
                 }
             }
         }
     //** apuntadores indirectos
-        if(node->i_block[12]!= -1){
+        if(node->block[12]!= -1){
             objetos::bloqueApuntadores * pointer_block = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-            fseek(archivo, super.s_block_start + (node->i_block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
+            fseek(archivo, super.s_block_start + (node->block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
             fread(pointer_block, sizeof (objetos::bloqueApuntadores), 1, archivo); //Recupero el bloque de Carpeta
             for(int i =0; i<16; i++){
                 if(pointer_block->b_pointers[i]!=-1){
@@ -1171,7 +1169,7 @@ void REP::Cuerpoinodos(objetos::Super_Bolque super, int noinodo, int pos_inode, 
                      int cont_int=0;
                     for (int j = 0; j < 4; j++) {
                         if (folder_block->b_content[j].b_inodo != -1) { //Que apunta a un inodo
-                            Cuerpoinodos(super, folder_block->b_content[j].b_inodo, super.s_inode_start + (folder_block->b_content[j].b_inodo * sizeof (objetos::inodo)), archivo, fp);
+                            CuerpoInodos(super, folder_block->b_content[j].b_inodo, super.s_inode_start + (folder_block->b_content[j].b_inodo * sizeof (objetos::inodo)), archivo, fp);
                         }
                     }
                 }
@@ -1179,7 +1177,7 @@ void REP::Cuerpoinodos(objetos::Super_Bolque super, int noinodo, int pos_inode, 
         }
     }
 }
-void REP::flechas_inodos(objetos::Super_Bolque super, FILE * fp){
+void REP::flechas_inodos(objetos::superBloque super, FILE * fp){
     int num_inodo= super.s_inode_start;
     int total_inodos = super.s_inodes_count - super.s_free_inodes_count;
     int contador = 0;
@@ -1200,7 +1198,7 @@ void REP::rep_arbol( char path[255],lista::nodoP * particion ){
     }
     // creo el mbr donde guardare los datos del mbr del disco
     MKDISK * nuevo = new MKDISK();
-    objetos::MBR mbr = nuevo->crear_mbr(0);
+    objetos::MBR mbr = nuevo->crearMBR(0);
     DIR* directorio = opendir(ruta_disco);
     int existe_dir =0;
     if (directorio) {
@@ -1229,10 +1227,10 @@ void REP::rep_arbol( char path[255],lista::nodoP * particion ){
             }
         }
         //si se encontro la particion en el mbr del disco se prosede a ubicarse en el inicio de la particion y se lee el super bloque
-        objetos::Super_Bolque super_bloque;
+        objetos::superBloque super_bloque;
         if(num_particion!=-1){
             fseek(archivo_mbr,mbr.mbr_partitions[num_particion].part_start,SEEK_SET);
-            fread(&super_bloque,sizeof(objetos::Super_Bolque),1,archivo_mbr);
+            fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_mbr);
         }else{
             cout<<" **ERROR: no se encontro la particion en el disco"<<endl;
             return;
@@ -1269,7 +1267,7 @@ void REP::rep_arbol( char path[255],lista::nodoP * particion ){
         }
     }
 }
-void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, FILE *archivo, FILE * fp) {
+void REP::CuerpoArbol(objetos::superBloque super, int noinodo, int pos_inode, FILE *archivo, FILE * fp) {
     //Obtener el inodo
     objetos::inodo *node = (objetos::inodo*) malloc(sizeof (objetos::inodo));
     fseek(archivo, pos_inode, SEEK_SET);
@@ -1303,22 +1301,22 @@ void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, F
     contador++;
     /*Apuntadores directos*/
     for (int i = 0; i < 12; i++) {
-        if (node->i_block[i] != -1) {
-            fprintf(fp, "|<f%d>APD%d :  %d\n", contador, i, node->i_block[i]);
+        if (node->block[i] != -1) {
+            fprintf(fp, "|<f%d>APD%d :  %d\n", contador, i, node->block[i]);
             contador++;
         }
     }
     /*Apuntadores indirectos*/
-    if (node->i_block[12] != -1) {
-        fprintf(fp, "|<f%d>APIS%d :  %d\n", contador, 12, node->i_block[12]);
+    if (node->block[12] != -1) {
+        fprintf(fp, "|<f%d>APIS%d :  %d\n", contador, 12, node->block[12]);
         contador++;
     }
-    if (node->i_block[13] != -1) {
-        fprintf(fp, "|<f%d>APID%d :  %d\n", contador, 13, node->i_block[13]);
+    if (node->block[13] != -1) {
+        fprintf(fp, "|<f%d>APID%d :  %d\n", contador, 13, node->block[13]);
         contador++;
     }
-    if (node->i_block[14] != -1) {
-        fprintf(fp, "|<f%d>APIT%d :  %d\n", contador, 14, node->i_block[14]);
+    if (node->block[14] != -1) {
+        fprintf(fp, "|<f%d>APIT%d :  %d\n", contador, 14, node->block[14]);
         contador++;
     }
     fprintf(fp, "\" shape = \"Mrecord\" color=cyan4];\n");
@@ -1327,15 +1325,15 @@ void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, F
         /*Apuntadores directos*/
         for (int i = 0; i < 12; i++) {
             contador = 0;
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 objetos::bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                 fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
-                fprintf(fp, "Folder%d[label=\"<f%d>Bloque Carpeta %d\n", node->i_block[i], contador, node->i_block[i]);
+                fprintf(fp, "Folder%d[label=\"<f%d>Bloque Carpeta %d\n", node->block[i], contador, node->block[i]);
                 contador++;
                 for (int j = 0; j < 4; j++) {
                     if (folder_block->b_content[j].b_inodo != -1) {
-                        fprintf(fp, "|<f%d>%s    %d\n", contador, folder_block->b_content[j].part_name, folder_block->b_content[j].b_inodo);
+                        fprintf(fp, "|<f%d>%s    %d\n", contador, folder_block->b_content[j].b_name, folder_block->b_content[j].b_inodo);
                         contador++;
                     }
                 }
@@ -1343,13 +1341,13 @@ void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, F
             }
         }
         //** apuntador indirecto
-        if(node->i_block[12]!=-1){
+        if(node->block[12]!=-1){
             //recuperar el bloque
             objetos::bloqueApuntadores * pointer_block = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-            fseek(archivo, super.s_block_start + (node->i_block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
+            fseek(archivo, super.s_block_start + (node->block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
             fread(pointer_block, sizeof (objetos::bloqueApuntadores), 1, archivo); //Recupero el bloque de Carpeta
 
-            fprintf(fp, "Apuntadores%d[label=\"<f%d>Bloque Apuntadores %d\n", node->i_block[12], contador, node->i_block[12]);
+            fprintf(fp, "Apuntadores%d[label=\"<f%d>Bloque Apuntadores %d\n", node->block[12], contador, node->block[12]);
             int cont2=0;
             for(int i =0; i<16; i++){
                     if(pointer_block->b_pointers[i]!=-1){
@@ -1368,7 +1366,7 @@ void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, F
                     int cont_int=0;
                     for (int j = 0; j < 4; j++) {
                         if (folder_block->b_content[j].b_inodo != -1) {
-                            fprintf(fp, "|<f%d>%s    %d\n", cont_int, folder_block->b_content[j].part_name, folder_block->b_content[j].b_inodo);
+                            fprintf(fp, "|<f%d>%s    %d\n", cont_int, folder_block->b_content[j].b_name, folder_block->b_content[j].b_inodo);
                             cont_int++;
                         }
                     }
@@ -1381,11 +1379,11 @@ void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, F
         /*Apuntadores directos*/
         for (int i = 0; i < 12; i++) {
             contador = 0;
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 objetos::bloqueArchivo *file_block = (objetos::bloqueArchivo*) malloc(sizeof (objetos::bloqueArchivo));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
                 fread(file_block, sizeof (objetos::bloqueArchivo), 1, archivo); //Recupero el bloque de Archivo
-                fprintf(fp, "Archivo%d[label=\"<f%d>Bloque Archivo %d\n", node->i_block[i], contador, node->i_block[i]);
+                fprintf(fp, "Archivo%d[label=\"<f%d>Bloque Archivo %d\n", node->block[i], contador, node->block[i]);
                 contador++;
                 char delimitador[] = "\n";
                 //delimitador[]= "\n";
@@ -1410,9 +1408,9 @@ void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, F
         /*Recorrer apuntadores directos*/
         int inicio;
         for (int i = 0; i < 12; i++) {
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 objetos::bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                 fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
                 if (i == 0) {
                     inicio = 2;
@@ -1427,9 +1425,9 @@ void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, F
             }
         }
         //** Recorrer apntadores indirectos de primer nivel
-        if(node->i_block[12] != -1 ){
+        if(node->block[12] != -1 ){
             objetos::bloqueApuntadores * pointer_block = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-            fseek(archivo, super.s_block_start + (node->i_block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
+            fseek(archivo, super.s_block_start + (node->block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
             fread(pointer_block, sizeof (objetos::bloqueApuntadores), 1, archivo); //Recupero el bloque de Carpeta
 
             for(int i =0; i<16; i++){
@@ -1448,7 +1446,7 @@ void REP::CuerpoArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, F
         }
     }
 }
-void REP::ApuntadoresArbol(objetos::Super_Bolque super, int noinodo, int pos_inode, FILE *archivo, FILE * fp) {
+void REP::ApuntadoresArbol(objetos::superBloque super, int noinodo, int pos_inode, FILE *archivo, FILE * fp) {
     //Obtener el inodo
     objetos::inodo *node = (objetos::inodo*) malloc(sizeof (objetos::inodo));
     fseek(archivo, pos_inode, SEEK_SET);
@@ -1458,11 +1456,11 @@ void REP::ApuntadoresArbol(objetos::Super_Bolque super, int noinodo, int pos_ino
         /*Apuntadores directos*/
         int inicio;
         for (int i = 0; i < 12; i++) {
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 objetos::bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                 fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
-                fprintf(fp, "inodo%d:f%d->Folder%d:f0;\n", noinodo, contador, node->i_block[i]);
+                fprintf(fp, "inodo%d:f%d->Folder%d:f0;\n", noinodo, contador, node->block[i]);
                 int contador2;
                 if (i == 0) {
                     inicio = 2;
@@ -1474,7 +1472,7 @@ void REP::ApuntadoresArbol(objetos::Super_Bolque super, int noinodo, int pos_ino
                 for (int j = inicio; j < 4; j++) { //Apuntadores de bloque de carpeta a inodos
                     if (folder_block->b_content[j].b_inodo != -1) {
 
-                        fprintf(fp, "Folder%d:f%d->inodo%d:f0;\n", node->i_block[i], contador2, folder_block->b_content[j].b_inodo);
+                        fprintf(fp, "Folder%d:f%d->inodo%d:f0;\n", node->block[i], contador2, folder_block->b_content[j].b_inodo);
                     }
                     contador2++;
                 }
@@ -1482,22 +1480,21 @@ void REP::ApuntadoresArbol(objetos::Super_Bolque super, int noinodo, int pos_ino
             contador++;
         }
         //** apuntadores indirectos
-        if(node->i_block[12]!= -1){
+        if(node->block[12]!= -1){
             //recuperar el bloque
             objetos::bloqueApuntadores * pointer_block = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-            fseek(archivo, super.s_block_start + (node->i_block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
+            fseek(archivo, super.s_block_start + (node->block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
             fread(pointer_block, sizeof (objetos::bloqueApuntadores), 1, archivo); //Recupero el bloque de Carpeta
-             fprintf(fp, "inodo%d:f%d->Apuntadores%d;\n", noinodo, contador, node->i_block[12]);
+             fprintf(fp, "inodo%d:f%d->Apuntadores%d;\n", noinodo, contador, node->block[12]);
 
              int cont2=0;
              for(int i=0; i<16; i++){
                  if(pointer_block->b_pointers[i] !=-1){
-
                      objetos::bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
                      fseek(archivo, super.s_block_start + (pointer_block->b_pointers[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                      fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
 
-                     fprintf(fp, "Apuntadores%d:f%d->Folder%d;\n", node->i_block[12], cont2, pointer_block->b_pointers[i]);
+                     fprintf(fp, "Apuntadores%d:f%d->Folder%d;\n", node->block[12], cont2, pointer_block->b_pointers[i]);
                      cont2++;
                  }
              }
@@ -1521,11 +1518,11 @@ void REP::ApuntadoresArbol(objetos::Super_Bolque super, int noinodo, int pos_ino
     } else if (node->i_type == '1') { //ARCHIVO
         /*Apuntadores directos*/
         for (int i = 0; i < 12; i++) {
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 objetos::bloqueArchivo *file_block = (objetos::bloqueArchivo*) malloc(sizeof (objetos::bloqueArchivo));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
                 fread(file_block, sizeof (objetos::bloqueArchivo), 1, archivo); //Recupero el bloque de Archivo
-                fprintf(fp, "inodo%d:f%d->Archivo%d:f0;\n", noinodo, contador, node->i_block[i]);
+                fprintf(fp, "inodo%d:f%d->Archivo%d:f0;\n", noinodo, contador, node->block[i]);
                 contador++;
             }
         }
@@ -1536,9 +1533,9 @@ void REP::ApuntadoresArbol(objetos::Super_Bolque super, int noinodo, int pos_ino
         /*Recorrer apuntadores directos*/
         int inicio;
         for (int i = 0; i < 12; i++) {
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                objetos:: bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                 fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
                 if (i == 0) {
                     inicio = 2;
@@ -1553,9 +1550,9 @@ void REP::ApuntadoresArbol(objetos::Super_Bolque super, int noinodo, int pos_ino
             }
         }
         //** apuntadores indirectos
-        if(node->i_block[12] != -1 ){
+        if(node->block[12] != -1 ){
             objetos::bloqueApuntadores * pointer_block = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-            fseek(archivo, super.s_block_start + (node->i_block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
+            fseek(archivo, super.s_block_start + (node->block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
             fread(pointer_block, sizeof (objetos::bloqueApuntadores), 1, archivo); //Recupero el bloque de Carpeta
             for(int i =0; i<16; i++){
                 if(pointer_block->b_pointers[i] != -1){
@@ -1585,7 +1582,7 @@ void REP::rep_bloques( char path[255],lista::nodoP * particion ){
     }
     // creo el mbr donde guardare los datos del mbr del disco
     MKDISK * nuevo = new MKDISK();
-    objetos::MBR mbr = nuevo->crear_mbr(0);
+    objetos::MBR mbr = nuevo->crearMBR(0);
     DIR* directorio = opendir(ruta_disco);
     int existe_dir =0;
     if (directorio) {
@@ -1614,10 +1611,10 @@ void REP::rep_bloques( char path[255],lista::nodoP * particion ){
             }
         }
         //si se encontro la particion en el mbr del disco se prosede a ubicarse en el inicio de la particion y se lee el super bloque
-        objetos::Super_Bolque super_bloque;
+        objetos::superBloque super_bloque;
         if(num_particion!=-1){
             fseek(archivo_mbr,mbr.mbr_partitions[num_particion].part_start,SEEK_SET);
-            fread(&super_bloque,sizeof(objetos::Super_Bolque),1,archivo_mbr);
+            fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_mbr);
         }else{
             cout<<" **ERROR: no se encontro la particion en el disco"<<endl;
             return;
@@ -1653,7 +1650,7 @@ void REP::rep_bloques( char path[255],lista::nodoP * particion ){
         }
     }
 }
-void REP::CuerpoBloques(objetos::Super_Bolque super, int pos_inode, FILE *archivo, FILE * fp) {
+void REP::CuerpoBloques(objetos::superBloque super, int pos_inode, FILE *archivo, FILE * fp) {
     //Obtener el inodo
     objetos::inodo *node = (objetos::inodo*) malloc(sizeof (objetos::inodo));
     fseek(archivo, pos_inode, SEEK_SET);
@@ -1662,28 +1659,28 @@ void REP::CuerpoBloques(objetos::Super_Bolque super, int pos_inode, FILE *archiv
         /******************************           Recorrer apuntadores directos         ***************************/
         for (int i = 0; i < 12; i++) {
             int contador = 0;
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 //Obtener el bloque de carpeta
                 objetos::bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                 fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
-                fprintf(fp, "Folder%d[label=\"<f%d>Bloque Carpeta %d\n", node->i_block[i], contador, node->i_block[i]);
+                fprintf(fp, "Folder%d[label=\"<f%d>Bloque Carpeta %d\n", node->block[i], contador, node->block[i]);
                 contador++;
                 for (int j = 0; j < 4; j++) {
                     if (folder_block->b_content[j].b_inodo != -1) {
-                        fprintf(fp, "|<f%d>%s    %d\n", contador, folder_block->b_content[j].part_name, folder_block->b_content[j].b_inodo);
+                        fprintf(fp, "|<f%d>%s    %d\n", contador, folder_block->b_content[j].b_name, folder_block->b_content[j].b_inodo);
                     }
                 }
                 fprintf(fp, "\"shape = \"Mrecord\" color=coral style=filled];\n");
             }
         }
         /*****************************       Recorrer apuntador Indirecto Simple        **************************/
-        if (node->i_block[12] != -1) {
+        if (node->block[12] != -1) {
             //Obtener el bloque de apuntadores
             objetos::bloqueApuntadores *pointer_block = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-            fseek(fp, super.s_block_start + (node->i_block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET);
+            fseek(fp, super.s_block_start + (node->block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET);
             fread(pointer_block, sizeof (objetos::bloqueApuntadores), 1, fp);
-            fprintf(fp, "Folder%d[label=\"Bloque Apuntadores %d\n", node->i_block[12], node->i_block[12]);
+            fprintf(fp, "Folder%d[label=\"Bloque Apuntadores %d\n", node->block[12], node->block[12]);
             int contador = 0;
             for (int i = 0; i < 16; i++) {
                 fprintf(fp, "%d,", pointer_block->b_pointers[i]);
@@ -1703,7 +1700,7 @@ void REP::CuerpoBloques(objetos::Super_Bolque super, int pos_inode, FILE *archiv
                     fprintf(fp, "Folder%d[label=\"Bloque Carpeta\n", pointer_block->b_pointers[i]);
                     for (int j = 0; j < 4; j++) {
                         if (folder_block->b_content[j].b_inodo != -1) {
-                            fprintf(fp, "%s    %d\n", folder_block->b_content[j].part_name, folder_block->b_content[j].b_inodo);
+                            fprintf(fp, "%s    %d\n", folder_block->b_content[j].b_name, folder_block->b_content[j].b_inodo);
                         }
                     }
                     fprintf(fp, "\"shape = \"Mrecord\" color=firebrick2 style=filled];\n");
@@ -1715,12 +1712,12 @@ void REP::CuerpoBloques(objetos::Super_Bolque super, int pos_inode, FILE *archiv
         /*****************************           Recorrer apuntadores directos         **************************/
         for (int i = 0; i < 12; i++) {
             int contador = 0;
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 //Obtener el bloque de archivo
                 objetos::bloqueArchivo *file_block = (objetos::bloqueArchivo*) malloc(sizeof (objetos::bloqueArchivo));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueArchivo)), SEEK_SET); //Me muevo al bloque de Archivo
                 fread(file_block, sizeof (objetos::bloqueArchivo), 1, archivo); //Recupero el bloque de Archivo
-                fprintf(fp, "Archivo%d[label=\"<f%d>Bloque Archivo %d\n", node->i_block[i], contador, node->i_block[i]);
+                fprintf(fp, "Archivo%d[label=\"<f%d>Bloque Archivo %d\n", node->block[i], contador, node->block[i]);
                 contador++;
                 //ciclo para separar
                 char delimitador[] = "\n";
@@ -1736,12 +1733,12 @@ void REP::CuerpoBloques(objetos::Super_Bolque super, int pos_inode, FILE *archiv
             }
         }
         /*****************************       Recorrer apuntador Indirecto Simple        **************************/
-        if (node->i_block[12] != -1) {
+        if (node->block[12] != -1) {
             //Obtener el bloque de apuntadores
             objetos::bloqueApuntadores *pointer_block = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-            fseek(fp, node->i_block[12], SEEK_SET);
+            fseek(fp, node->block[12], SEEK_SET);
             fread(pointer_block, sizeof (objetos::bloqueApuntadores), 1, fp);
-            fprintf(fp, "Folder%d[label=\"Bloque Apuntadores\n", node->i_block[12]);
+            fprintf(fp, "Folder%d[label=\"Bloque Apuntadores\n", node->block[12]);
             int contador = 0;
             for (int i = 0; i < 16; i++) {
                 fprintf(fp, "%d,", pointer_block->b_pointers[i]);
@@ -1779,9 +1776,9 @@ void REP::CuerpoBloques(objetos::Super_Bolque super, int pos_inode, FILE *archiv
         /*Recorrer apuntadores directos*/
         int inicio;
         for (int i = 0; i < 12; i++) {
-            if (node->i_block[i] != -1) {
+            if (node->block[i] != -1) {
                 objetos::bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                 fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
                 if (i == 0) {
                     inicio = 2;
@@ -1797,14 +1794,14 @@ void REP::CuerpoBloques(objetos::Super_Bolque super, int pos_inode, FILE *archiv
         }
     }
     //** apuntadores indirectos
-    if(node->i_block[12]!= -1){
+    if(node->block[12]!= -1){
         objetos::bloqueApuntadores * pointer_block = (objetos::bloqueApuntadores*) malloc(sizeof (objetos::bloqueApuntadores));
-        fseek(archivo, super.s_block_start + (node->i_block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
+        fseek(archivo, super.s_block_start + (node->block[12] * sizeof (objetos::bloqueApuntadores)), SEEK_SET); //Me muevo al bloque de Carpeta
         fread(pointer_block, sizeof (objetos::bloqueApuntadores), 1, archivo); //Recupero el bloque de Carpeta
         for(int i =0; i<16; i++){
             if(pointer_block->b_pointers[i]!=-1){
                 objetos::bloqueCarpeta *folder_block = (objetos::bloqueCarpeta*) malloc(sizeof (objetos::bloqueCarpeta));
-                fseek(archivo, super.s_block_start + (node->i_block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
+                fseek(archivo, super.s_block_start + (node->block[i] * sizeof (objetos::bloqueCarpeta)), SEEK_SET); //Me muevo al bloque de Carpeta
                 fread(folder_block, sizeof (objetos::bloqueCarpeta), 1, archivo); //Recupero el bloque de Carpeta
                  int cont_int=0;
                 for (int j = 0; j < 4; j++) {
@@ -1827,7 +1824,7 @@ void REP::rep_journal( char path[255],lista::nodoP * particion ){
     }
     // creo el mbr donde guardare los datos del mbr del disco
     MKDISK * nuevo = new MKDISK();
-    objetos::MBR mbr = nuevo->crear_mbr(0);
+    objetos::MBR mbr = nuevo->crearMBR(0);
     DIR* directorio = opendir(ruta_disco);
     int existe_dir =0;
     if (directorio) {
@@ -1857,10 +1854,10 @@ void REP::rep_journal( char path[255],lista::nodoP * particion ){
             }
         }
         //si se encontro la particion en el mbr del disco se prosede a ubicarse en el inicio de la particion y se lee el super bloque
-        objetos::Super_Bolque super_bloque;
+        objetos::superBloque super_bloque;
         if(num_particion!=-1){
             fseek(archivo_mbr,mbr.mbr_partitions[num_particion].part_start,SEEK_SET);
-            fread(&super_bloque,sizeof(objetos::Super_Bolque),1,archivo_mbr);
+            fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_mbr);
         }else{
             cout<<" **ERROR: no se encontro la particion en el disco"<<endl;
             return;
@@ -1880,8 +1877,8 @@ void REP::rep_journal( char path[255],lista::nodoP * particion ){
             fprintf(doc, "        fillcolor=gainsboro\n");
             fprintf(doc, "        color =orange\n");
             fprintf(doc, "    ]\n");
-            CuerpoJournaling(mbr.mbr_partitions[num_particion].part_start, super_bloque.s_bitmap_inode_start, archivo_mbr, doc, mbr.mbr_partitions[num_particion].part_name);
-            flechas_journal(mbr.mbr_partitions[num_particion].part_start, super_bloque.s_bitmap_inode_start, archivo_mbr, doc, mbr.mbr_partitions[num_particion].part_name);
+            CuerpoJournaling(mbr.mbr_partitions[num_particion].part_start, super_bloque.s_bm_inode_start, archivo_mbr, doc, mbr.mbr_partitions[num_particion].part_name);
+            flechas_journal(mbr.mbr_partitions[num_particion].part_start, super_bloque.s_bm_inode_start, archivo_mbr, doc, mbr.mbr_partitions[num_particion].part_name);
             fprintf(doc, "}\n");
             fclose(doc);
             fclose(archivo_mbr);
@@ -1900,17 +1897,17 @@ void REP::rep_journal( char path[255],lista::nodoP * particion ){
     }
 }
 void REP::CuerpoJournaling(int inicioParticion, int inicioBitmapinodo, FILE *archivo, FILE * fp, char particion[]){
-    int posicion = inicioParticion + sizeof (objetos::Super_Bolque);
-    for(int i = posicion; i < inicioBitmapinodo; i = i + sizeof (objetos::Journal)) {
-        objetos::Journal *j = (objetos::Journal*) malloc(sizeof (objetos::Journal));
+    int posicion = inicioParticion + sizeof (objetos::superBloque);
+    for(int i = posicion; i < inicioBitmapinodo; i = i + sizeof (objetos::journal)) {
+        objetos::journal *j = (objetos::journal*) malloc(sizeof (objetos::journal));
         fseek(archivo, i, SEEK_SET);
-        fread(j, sizeof (objetos::Journal), 1, archivo);
+        fread(j, sizeof (objetos::journal), 1, archivo);
         int contador = 0;
-        if (j->state=='1') {
+        if (j->estado=='1') {
             //DIBUJO DEL inodo
             fprintf(fp, "Journal%d[label=\"<f%d>Journal\n", i, contador);
             contador++;
-            fprintf(fp, "|<f%d>OPERACION :     %s\n", contador, j->operation);
+            fprintf(fp, "|<f%d>OPERACION :     %s\n", contador, j->operacion);
             contador++;
             fprintf(fp, "|<f%d>TIME : %s\n", contador, ctime(&j->hora));
             contador++;
@@ -1927,18 +1924,18 @@ void REP::CuerpoJournaling(int inicioParticion, int inicioBitmapinodo, FILE *arc
     }
 }
 void REP::flechas_journal(int inicioParticion, int inicioBitmapinodo, FILE *archivo, FILE * fp, char particion[]){
-    int posicion = inicioParticion + sizeof (objetos::Super_Bolque);
-    for(int i = posicion; i < inicioBitmapinodo; i = i + sizeof (objetos::Journal)) {
-        objetos::Journal *j = (objetos::Journal*) malloc(sizeof (objetos::Journal));
+    int posicion = inicioParticion + sizeof (objetos::superBloque);
+    for(int i = posicion; i < inicioBitmapinodo; i = i + sizeof (objetos::journal)) {
+        objetos::journal *j = (objetos::journal*) malloc(sizeof (objetos::journal));
         fseek(archivo, i, SEEK_SET);
-        fread(j, sizeof (objetos::Journal), 1, archivo);
-        objetos::Journal *j2 = (objetos::Journal*) malloc(sizeof (objetos::Journal));
-        fseek(archivo, i+ sizeof (objetos::Journal), SEEK_SET);
-        fread(j2, sizeof (objetos::Journal), 1, archivo);
+        fread(j, sizeof (objetos::journal), 1, archivo);
+        objetos::journal *j2 = (objetos::journal*) malloc(sizeof (objetos::journal));
+        fseek(archivo, i+ sizeof (objetos::journal), SEEK_SET);
+        fread(j2, sizeof (objetos::journal), 1, archivo);
         int contador = 0;
-        if (j->state=='1' && j2->state=='1') {
+        if (j->estado=='1' && j2->estado=='1') {
             //DIBUJO DEL inodo
-            fprintf(fp, "Journal%d -> Journal%d \n", i,i + sizeof (objetos::Journal) );
+            fprintf(fp, "Journal%d -> Journal%d \n", i,i + sizeof (objetos::journal) );
 
         } else {
             break;
@@ -2029,7 +2026,7 @@ void REP::permisos(int num,FILE * doc){
             break;
     }
 }
-void REP::obtener_Nuser(objetos::Super_Bolque super_bloque, int n_usuario, FILE * archivo_disco,FILE* doc){
+void REP::obtener_Nuser(objetos::superBloque super_bloque, int n_usuario, FILE * archivo_disco,FILE* doc){
     //OBTENIENDO inodo DEL ARCHIVO USERS
     objetos::inodo *users = (objetos::inodo*) malloc(sizeof (objetos::inodo));
     int posUser = super_bloque.s_inode_start + sizeof (objetos::inodo);
@@ -2037,7 +2034,7 @@ void REP::obtener_Nuser(objetos::Super_Bolque super_bloque, int n_usuario, FILE 
     fread(users, sizeof (objetos::inodo), 1, archivo_disco);
     //OBTENIENDO TExTO DEL ARCHIVO
     char Texto[14000];
-    login * sis = new login();
+    LOGIN * sis = new LOGIN();
     strcpy(Texto,sis->ObtenerTexto(archivo_disco, super_bloque, users));
     char Text[14000];
     strcpy(Text, strdup(Texto));
@@ -2088,7 +2085,7 @@ void REP::obtener_Nuser(objetos::Super_Bolque super_bloque, int n_usuario, FILE 
    line = strtok_r(NULL, "\n", &end_str);
    }
 }
-void REP::obtener_Ngrupo(objetos::Super_Bolque super_bloque, int n_grupo, FILE * archivo_disco,FILE* doc){
+void REP::obtener_Ngrupo(objetos::superBloque super_bloque, int n_grupo, FILE * archivo_disco,FILE* doc){
     //OBTENIENDO inodo DEL ARCHIVO USERS
     objetos::inodo *users = (objetos::inodo*) malloc(sizeof (objetos::inodo));
     int posUser = super_bloque.s_inode_start + sizeof (objetos::inodo);
@@ -2096,7 +2093,7 @@ void REP::obtener_Ngrupo(objetos::Super_Bolque super_bloque, int n_grupo, FILE *
     fread(users, sizeof (objetos::inodo), 1, archivo_disco);
     //OBTENIENDO TExTO DEL ARCHIVO
     char Texto[14000];
-    login * sis = new login();
+    LOGIN * sis = new LOGIN();
     strcpy(Texto,sis->ObtenerTexto(archivo_disco, super_bloque, users));
     char Text[14000];
     strcpy(Text, strdup(Texto));
@@ -2104,13 +2101,8 @@ void REP::obtener_Ngrupo(objetos::Super_Bolque super_bloque, int n_grupo, FILE *
     int id = 0;
     char tipo = 'A';
     char nameGroup[11];
-    char nameUser[11];
-    char password[11];
     char *end_str;
     char *line = strtok_r(Text, "\n", &end_str);
-    int cont1=0;
-    int cont2=0;
-    int contador_usuarios=0;
     while (line != NULL) {
         char *end_token;
         char *token = strtok_r(line, ",", &end_token);

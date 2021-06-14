@@ -20,7 +20,7 @@ public:
 	int PosBitmap(int inicio, int max, int tamanio);
 	void escribirBitmapInodos(objetos::superBloque s_bloque, int n, FILE* archivo_disco);
 	void escribirBitmapBloques(objetos::superBloque s_bloque, FILE* archivo_disco);
-	void crearArchivoUsuarios(objetos::BloqueCarpeta Bloque, FILE *archivo_disco, objetos::superBloque s_bloque, fs *sistema)
+    void crearArchivoUsuarios(objetos::bloqueCarpeta Bloque, FILE *archivo_disco, objetos::superBloque s_bloque, fs *sistema);
 };
 
 #endif // MKFS_H

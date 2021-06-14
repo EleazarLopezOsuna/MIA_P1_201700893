@@ -6,9 +6,9 @@
 #include <vector>  //for std::vector
 #include "objetos.h"
 #include "lista.h"
-#include <mount.h>
+#include <MOUNT.h>
 #include <stdio.h>
-#include <fsystem.h>
+#include <fs.h>
 #include "MKDIR.h"
 using namespace std;
 

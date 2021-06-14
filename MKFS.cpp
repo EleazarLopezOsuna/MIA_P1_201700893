@@ -14,10 +14,10 @@ void MKFS::ejecutar_MKFS(lista::list * lista){
 	 * 4. Enviamos los datos a su respectivo metodo
 	 */
     int letra = id[3];
-    mount * nuevo;
-    lista::nodoC * disco_montado = nuevo->buscar_porLetra(letra, lista->first);
+    MOUNT * nuevo;
+    lista::nodoC * disco_montado = nuevo->buscarLetra(letra, lista->first);
     if(disco_montado != NULL){
-        lista::nodoP * particion = nuevo-> buscar_id_existente(id, lista->first);
+        lista::nodoP * particion = nuevo-> buscarExistente(id, lista->first);
         if(particion!= NULL){
             FILE * archivo_disco = fopen(disco_montado->path, "rb");
             if(archivo_disco != NULL){
@@ -50,7 +50,7 @@ void MKFS::formatear_sistema(char *name, char *path, int tfs){
         fseek(archivo_disco,0,SEEK_SET);
         fread(&mbr,sizeof(objetos::MBR),1,archivo_disco);
         for(int i=0; i<4; i++){
-             if(strcmp(mbr.mbr_partitions[i].name, name)==0){
+             if(strcmp(mbr.mbr_partitions[i].part_name, name)==0){
                  pos_part = i;
                  break;
              }
@@ -81,72 +81,72 @@ void MKFS::formatear_sistema(char *name, char *path, int tfs){
             s_bloque.s_filesystem_type = tfs;//Tipo de sistema
             s_bloque.s_inodes_count = n;//Numero de inodos
             s_bloque.s_blocks_count = 3 * n;//3 veces el numero de inodos
-            s_bloque.s_free_inodos_count = n - 1; //Quito 1 inodo por que debemos crear la root
+            s_bloque.s_free_inodes_count = n - 1; //Quito 1 inodo por que debemos crear la root
             s_bloque.s_free_blocks_count = 3 * n - 1; //Quito 1 bloque por que debemos crear la root
-            s_bloque.s_mount_time = s_bloque.s_unmount_time = time(0);
-            s_bloque.s_mount_count = 1;
+            s_bloque.s_mtime = s_bloque.s_umtime = time(0);
+            s_bloque.s_mnt_count = 1;
             s_bloque.s_magic = 61267;//Valor decimal de 0xEF53 (pagina 33 del enunciado)
             s_bloque.s_inode_size = sizeof(objetos::inodo);//Size del inodo
             s_bloque.s_block_size = sizeof(objetos::bloqueArchivo);//Size del bloque
             s_bloque.s_bm_inode_start = inicio_particion + sizeof(objetos::superBloque) + (n * sizeof(objetos::journal));//Posicion inicial del bitmap de inodos
             s_bloque.s_bm_block_start = s_bloque.s_bm_inode_start + sizeof(char) * n;//Posicion inicial del bitmap de bloques
             s_bloque.s_inode_start = s_bloque.s_bm_block_start + sizeof(char) * (3 * n);//Posicion del inodo inicial
-            s_bloque.s_block_start = s_bloque.s_inode_start + sizeof(objetos::Inodo) *n;//Posicion del bloque inicial
-            s_bloque.s_first_inode = s_bloque.s_inode_start;//Posicion del primer inodo
-            s_bloque.s_first_block = s_bloque.s_block_start;//Posicion del primer bloque
+            s_bloque.s_block_start = s_bloque.s_inode_start + sizeof(objetos::inodo) *n;//Posicion del bloque inicial
+            s_bloque.s_first_ino = s_bloque.s_inode_start;//Posicion del primer inodo
+            s_bloque.s_first_blo = s_bloque.s_block_start;//Posicion del primer bloque
             objetos::journal  bloque_j;
             bloque_j.estado='0';
             int inicioBitmapInodo = s_bloque.s_inode_start;//Inicializo el bitmap de inodos
             int posicion = inicio_particion + sizeof (objetos::superBloque);//Me posiciono luego del super bloque
             //Escribo el journal
-            for (int i = posicion; i < inicioBitmapInodo; i = i + sizeof (objetos::Journal)) {
+            for (int i = posicion; i < inicioBitmapInodo; i = i + sizeof (objetos::journal)) {
                 fseek(archivo_disco, i, SEEK_SET);
-                fwrite(&bloque_j, sizeof (objetos::Journal), 1, archivo_disco);
+                fwrite(&bloque_j, sizeof (objetos::journal), 1, archivo_disco);
             }
             //Escribiendo los bitmap
             escribirBitmapInodos(s_bloque, n, archivo_disco);
             escribirBitmapBloques(s_bloque, archivo_disco);
             fs *sistema = new fs();
           	//Creando el nodo root
-            objetos::Inodo  root = sistema->Crear_Inodo();
+            objetos::inodo  root = sistema->Crear_Inodo();
             root.i_uid = 1; //Usuario propietario: root
             root.i_gid = 1; //Grupo al que pertenece root;
             root.i_mtime = time(0); //fecha en la que se modificó el inodo
             root.i_type = '0'; //Es una carpeta
             root.i_perm = 664; //Permisos
-            root.i_block[0] = 0; //Primer apuntador directo a Bloque cero.
+            root.block[0] = 0; //Primer apuntador directo a Bloque cero.
            	//Escribiendo la root
             fseek(archivo_disco, s_bloque.s_inode_start, SEEK_SET);
-            fwrite(&root, sizeof (objetos::Inodo), 1, archivo_disco);
+            fwrite(&root, sizeof (objetos::inodo), 1, archivo_disco);
            	//Creando el directorio raiz
-            objetos::BloqueCarpeta Bloque ;
+            objetos::bloqueCarpeta Bloque ;
             for(int i = 0; i < 4; i++){
-            	Bloque.b_content[i].inodo = -1;
-                Bloque.b_content[i].name[0] = '\0';
+                Bloque.b_content[i].b_inodo = -1;
+                Bloque.b_content[i].b_name[0] = '\0';
             }
-            strcpy(Bloque.b_content[0].name, "."); //Actualizando inodo padre y actual
-            Bloque.b_content[0].inodo = 0;
-            strcpy(Bloque.b_content[1].name, "..");
-            Bloque.b_content[1].inodo = 0;
+            strcpy(Bloque.b_content[0].b_name, "."); //Actualizando inodo padre y actual
+            Bloque.b_content[0].b_inodo = 0;
+            strcpy(Bloque.b_content[1].b_name, "..");
+            Bloque.b_content[1].b_inodo = 0;
            	//Escribiendo el directorio raiz
             fseek(archivo_disco, s_bloque.s_block_start, SEEK_SET);
-            fwrite(&Bloque, sizeof (objetos::BloqueCarpeta), 1, archivo_disco);
+            fwrite(&Bloque, sizeof (objetos::bloqueCarpeta), 1, archivo_disco);
             //Actualizando el bitmap de inodo
             sistema->ActualizarBitmap(archivo_disco, s_bloque.s_bm_inode_start, '1');
-            s_bloque.s_first_inode = s_bloque.s_first_inode + sizeof (objetos::Inodo);
+            s_bloque.s_first_ino = s_bloque.s_first_ino + sizeof (objetos::inodo);
 			//Actualizando el bitmap de bloque
 			sistema->ActualizarBitmap(archivo_disco, s_bloque.s_bm_block_start, 'C');
-            s_bloque.s_first_block = s_bloque.s_first_block + sizeof (objetos::BloqueCarpeta);
+            s_bloque.s_first_blo = s_bloque.s_first_blo + sizeof (objetos::bloqueCarpeta);
             //Escribiendo super bloque
             fseek(archivo_disco, mbr.mbr_partitions[pos_part].part_start, SEEK_SET);
             fwrite(&s_bloque, sizeof (objetos::superBloque), 1, archivo_disco);
             //Creando el archivo de usuarios
             crearArchivoUsuarios(Bloque, archivo_disco, s_bloque, sistema);
             //Actualizando el super bloque
-            s_bloque.s_first_inode = s_bloque.s_first_inode + sizeof (objetos::Inodo);
-            s_bloque.s_first_block = s_bloque.s_first_block + sizeof (objetos::BloqueCarpeta);
-            s_bloque.s_free_blocks--;
-            s_bloque.s_free_inodos--;
+            s_bloque.s_first_ino = s_bloque.s_first_ino + sizeof (objetos::inodo);
+            s_bloque.s_first_blo = s_bloque.s_first_blo + sizeof (objetos::bloqueCarpeta);
+            s_bloque.s_free_blocks_count--;
+            s_bloque.s_free_inodes_count--;
             //Escribiendo el super bloque
             fseek(archivo_disco, mbr.mbr_partitions[pos_part].part_start, SEEK_SET);
             fwrite(&s_bloque, sizeof (objetos::superBloque), 1, archivo_disco);
@@ -165,7 +165,7 @@ void MKFS::escribirBitmapInodos(objetos::superBloque s_bloque, int n, FILE* arch
 	int r = s_bloque.s_bm_inode_start;
 	while(contador < n){
 		objetos::bitmap bMap;
-		bMap.estado = '0';
+        bMap.state = '0';
 		fseek(archivo_disco, r, SEEK_SET);
 		fwrite(&bMap, sizeof(objetos::bitmap), 1, archivo_disco);
 		r++;
@@ -178,20 +178,20 @@ void MKFS::escribirBitmapBloques(objetos::superBloque s_bloque, FILE* archivo_di
 	int n_bloques = s_bloque.s_inodes_count * 3;
 	while(contador < n_bloques){
 		objetos::bitmap bMap;
-		bMap.estado = '0';
+        bMap.state = '0';
 		fseek(archivo_disco, r, SEEK_SET);
 		fwrite(&bMap, sizeof(objetos::bitmap), 1, archivo_disco);
 		r++;
 		contador++;
 	}
 }
-void MKFS::crearArchivoUsuarios(objetos::BloqueCarpeta Bloque, FILE *archivo_disco, objetos::superBloque s_bloque, fs *sistema){
+void MKFS::crearArchivoUsuarios(objetos::bloqueCarpeta Bloque, FILE *archivo_disco, objetos::superBloque s_bloque, fs *sistema){
 	//Agregando el apuntador
-	strcpy(Bloque.b_content[2].name, "users.i_txt");
-	Bloque.b_content[2].inodo = sistema->ObtenerNumeroInodo(s_bloque);
+    strcpy(Bloque.b_content[2].b_name, "users.i_txt");
+    Bloque.b_content[2].b_inodo = sistema->ObtenerNumeroInodo(s_bloque);
 	//Actualizando el bloque root
 	fseek(archivo_disco, s_bloque.s_block_start, SEEK_SET);
-    fwrite(&Bloque, sizeof(objetos::BloqueCarpeta), 1, archivo_disco);
+    fwrite(&Bloque, sizeof(objetos::bloqueCarpeta), 1, archivo_disco);
     //Creando el inodo del archivo users.i_txt
     objetos::inodo users = sistema->Crear_Inodo();
     users.i_uid = 1; //Usuario propietario: root
@@ -201,37 +201,38 @@ void MKFS::crearArchivoUsuarios(objetos::BloqueCarpeta Bloque, FILE *archivo_dis
     users.i_mtime = now;
     users.i_type = '1'; //Es un archivo
     users.i_perm = 664; //Permisos
-    users.i_block[0] = sistema->ObtenerNumeroBloque(s_bloque); //Primer apuntador directo a Bloque dos
+    users.block[0] = sistema->ObtenerNumeroBloque(s_bloque); //Primer apuntador directo a Bloque dos
     //Escribiendo el inodo
-    fseek(archivo_disco, s_bloque.s_first_inode, SEEK_SET);
-    fwrite(&users, sizeof (objetos::Inodo), 1, archivo_disco);
+    fseek(archivo_disco, s_bloque.s_first_ino, SEEK_SET);
+    fwrite(&users, sizeof (objetos::inodo), 1, archivo_disco);
     //Creando el bloque de archivo
-    objetos::BloqueArchivo cont = sistema->CrearBloqueArchivo();
+    objetos::bloqueArchivo cont;
+    cont.b_content[0] = '\0';
     strcpy(cont.b_content, "1,G,root\n1,U,root,root,123\n");
     //Escribiendo el bloque
-    fseek(archivo_disco, s_bloque.s_first_block, SEEK_SET);
-    fwrite(&cont, sizeof(objetos::BloqueArchivo), 1, archivo_disco);
+    fseek(archivo_disco, s_bloque.s_first_blo, SEEK_SET);
+    fwrite(&cont, sizeof(objetos::bloqueArchivo), 1, archivo_disco);
     //Modificando el bitmap de inodo
-    int bMap = PosBitmap(s_bloque.s_inode_start, s_bloque.s_first_inode, sizeof (objetos::Inodo));
-    int posBit = s_bloque.s_bm_inode_start + (bipInodo * sizeof (objetos::Bitmap));
+    int bMap = PosBitmap(s_bloque.s_inode_start, s_bloque.s_first_ino, sizeof (objetos::inodo));
+    int posBit = s_bloque.s_bm_inode_start + (bMap * sizeof (objetos::bitmap));
     //Reescribiendo el bitmap de inodo
-    objetos::Bitmap bip;
+    objetos::bitmap bip;
     //Obtengo el bitmap
     	fseek(archivo_disco, posBit, SEEK_SET);
-    	fread(&bip, sizeof (objetos::Bitmap), 1, archivo_disco);
+        fread(&bip, sizeof (objetos::bitmap), 1, archivo_disco);
     //Modifico y escribo en el bitmap
-    	bip.estado = '1';
+        bip.state = '1';
     	fseek(archivo_disco, posBit, SEEK_SET);
-    	fwrite(&bip, sizeof (objetos::Bitmap), 1, archivo_disco);
+        fwrite(&bip, sizeof (objetos::bitmap), 1, archivo_disco);
     //Modificando el bitmap de bloque
-    bMap = PosBitmap(s_bloque.s_block_start, s_bloque.s_first_block, sizeof (objetos::BloqueCarpeta));
-    posBit = s_bloque.s_bm_block_start + (bMap * sizeof (objetos::Bitmap));
+    bMap = PosBitmap(s_bloque.s_block_start, s_bloque.s_first_blo, sizeof (objetos::bloqueCarpeta));
+    posBit = s_bloque.s_bm_block_start + (bMap * sizeof (objetos::bitmap));
     //Reescribiendo el bitmap de bloque
     //Obtengo el bitmap
     	fseek(archivo_disco, posBit, SEEK_SET);
-    	fread(&bip, sizeof (objetos::Bitmap), 1, archivo_disco);
+        fread(&bip, sizeof (objetos::bitmap), 1, archivo_disco);
    	//Modifico y escribo en el bitmap
-    	bip.estado = 'A';
+        bip.state = 'A';
     	fseek(archivo_disco, posBit, SEEK_SET);
-    	fwrite(&bip, sizeof (objetos::Bitmap), 1, archivo_disco);
+        fwrite(&bip, sizeof (objetos::bitmap), 1, archivo_disco);
 }

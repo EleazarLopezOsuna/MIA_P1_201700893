@@ -38,8 +38,8 @@ void MKGRP::ejecutar_mkgrp(objetos::activeUser * usuario,lista::list * lista ){
     int letra = usuario->particion[3];
     MOUNT * nuevo;
     //busca la lista del particiones del disco
-    lista::nodoC * disco_montado = nuevo->buscar_porLetra(letra, lista->primero);
-    lista::nodoP * particion= nuevo->buscar_id_existente(usuario->particion, lista->primero);
+    lista::nodoC * disco_montado = nuevo->buscarLetra(letra, lista->first);
+    lista::nodoP * particion= nuevo->buscarExistente(usuario->particion, lista->first);
     if(disco_montado !=NULL){
         FILE * archivo_disco = fopen(disco_montado->path, "rb+");
         if(archivo_disco != NULL){
@@ -50,14 +50,14 @@ void MKGRP::ejecutar_mkgrp(objetos::activeUser * usuario,lista::list * lista ){
             //buscar particion en el mbr
             int num_particion=-1;
             for(int i=0;i<4;i++){
-                if(strcmp(mbr.mbr_particion[i].part_name,particion->name)==0){
+                if(strcmp(mbr.mbr_partitions[i].part_name,particion->name)==0){
                    num_particion=i;
                    break;
                 }
             }
             //obtener super bloque
             objetos::superBloque  super_bloque;
-            fseek(archivo_disco, mbr.mbr_particion[num_particion].part_start, SEEK_SET);
+            fseek(archivo_disco, mbr.mbr_partitions[num_particion].part_start, SEEK_SET);
             fread(&super_bloque, sizeof (objetos::superBloque), 1, archivo_disco);
             //inodo del archivo de Users -- siempre sera el segundo inodo
             objetos::inodo users;
@@ -136,16 +136,16 @@ void MKGRP::ejecutar_mkgrp(objetos::activeUser * usuario,lista::list * lista ){
                 fseek(archivo_disco, posUser, SEEK_SET);
                 fwrite(&users, sizeof (objetos::inodo), 1, archivo_disco);
                 //Actualizando Super Bloque
-                fseek(archivo_disco, mbr.mbr_particion[num_particion].part_start, SEEK_SET);
+                fseek(archivo_disco, mbr.mbr_partitions[num_particion].part_start, SEEK_SET);
                 fwrite(&super_bloque, sizeof (objetos::superBloque), 1, archivo_disco);
                 //Actualizando el Journaling
                 int posJournal =-1;
-                int posicion = mbr.mbr_particion[num_particion].part_start + sizeof (super_bloque);
+                int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                 int a=0;
-                for (int i = posicion; i < super_bloque.s_bitmap_inode_start; i = i + sizeof (objetos::Journal)) {
-                    objetos::Journal j ;
+                for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                    objetos::journal j ;
                     fseek(archivo_disco, i, SEEK_SET);
-                    fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                    fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                     a++;
                     if (j.estado =='0') {
                         posJournal =i ;
@@ -158,11 +158,11 @@ void MKGRP::ejecutar_mkgrp(objetos::activeUser * usuario,lista::list * lista ){
                     char comando[256];
                     strcpy(comando,"MKgrp -name=");
                     strcat(comando,nombre);
-                    objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
+                    objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
                     journal = sis->CrearJornal(usuario->user,comando);
                     journal->estado ='1';
                     fseek(archivo_disco, posJournal, SEEK_SET);
-                    fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                    fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                 }
                 fclose(archivo_disco);
              }
@@ -183,8 +183,8 @@ void MKGRP::ejecutar_mkusr(objetos::activeUser *usuario, lista::list *lista){
     int letra = usuario->particion[3];
     MOUNT * nuevo;
     //busca la lista del particiones del disco
-    lista::nodoC * disco_montado = nuevo->buscar_porLetra(letra, lista->primero);
-    lista::nodoP * particion= nuevo->buscar_id_existente(usuario->particion, lista->primero);
+    lista::nodoC * disco_montado = nuevo->buscarLetra(letra, lista->first);
+    lista::nodoP * particion= nuevo->buscarExistente(usuario->particion, lista->first);
     if(disco_montado !=NULL){
         FILE * archivo_disco = fopen(disco_montado->path, "rb+");
         if(archivo_disco != NULL){
@@ -195,14 +195,14 @@ void MKGRP::ejecutar_mkusr(objetos::activeUser *usuario, lista::list *lista){
             //buscar particion en el mbr
             int num_particion=-1;
             for(int i=0;i<4;i++){
-                if(strcmp(mbr.mbr_particion[i].part_name,particion->name)==0){
+                if(strcmp(mbr.mbr_partitions[i].part_name,particion->name)==0){
                    num_particion=i;
                    break;
                 }
             }
             //obtener super bloque
             objetos::superBloque  super_bloque;
-            fseek(archivo_disco, mbr.mbr_particion[num_particion].part_start, SEEK_SET);
+            fseek(archivo_disco, mbr.mbr_partitions[num_particion].part_start, SEEK_SET);
             fread(&super_bloque, sizeof (objetos::superBloque), 1, archivo_disco);
             //inodo del archivo de Users -- siempre sera el segundo inodo
             objetos::inodo users ;
@@ -295,16 +295,16 @@ void MKGRP::ejecutar_mkusr(objetos::activeUser *usuario, lista::list *lista){
                 fseek(archivo_disco, posUser, SEEK_SET);
                 fwrite(&users, sizeof (objetos::inodo), 1, archivo_disco);
                 //Actualizar Super Bloque
-                fseek(archivo_disco, mbr.mbr_particion[num_particion].part_start, SEEK_SET);
+                fseek(archivo_disco, mbr.mbr_partitions[num_particion].part_start, SEEK_SET);
                 fwrite(&super_bloque, sizeof (objetos::superBloque), 1, archivo_disco);
                 //obtengo la posicion del journal
                 int posJournal =-1;
-                int posicion = mbr.mbr_particion[num_particion].part_start + sizeof (super_bloque);
+                int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                 int a=0;
-                for (int i = posicion; i < super_bloque.s_bitmap_inode_start; i = i + sizeof (objetos::Journal)) {
-                    objetos::Journal j ;
+                for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
+                    objetos::journal j ;
                     fseek(archivo_disco, i, SEEK_SET);
-                    fread(&j, sizeof (objetos::Journal), 1, archivo_disco);
+                    fread(&j, sizeof (objetos::journal), 1, archivo_disco);
                     a++;
                     if (j.estado =='0') {
                         posJournal =i ;
@@ -321,10 +321,10 @@ void MKGRP::ejecutar_mkusr(objetos::activeUser *usuario, lista::list *lista){
                     strcat(comando,password);
                     strcat(comando," -grp=");
                     strcat(comando,grupo);
-                    objetos::Journal * journal = (objetos::Journal*)malloc(sizeof (objetos::Journal));
+                    objetos::journal * journal = (objetos::journal*)malloc(sizeof (objetos::journal));
                     journal = sis->CrearJornal(usuario->user,comando);
                     fseek(archivo_disco, posJournal, SEEK_SET);
-                    fwrite(journal, sizeof (objetos::Journal), 1, archivo_disco);
+                    fwrite(journal, sizeof (objetos::journal), 1, archivo_disco);
                 }
             }
             fclose(archivo_disco);

@@ -15,8 +15,8 @@ void RMUSR::ejecutar_RMUSR(objetos::activeUser * usuario, lista::list * lista){
     int letra = usuario->particion[3];
     MOUNT * nuevo;
     //busca la lista del particiones del disco
-    lista::nodoC * disco_montado = nuevo->buscar_porLetra(letra, lista->primero);
-    lista::nodoP * particion= nuevo->buscar_id_existente(usuario->particion, lista->primero);
+    lista::nodoC * disco_montado = nuevo->buscarLetra(letra, lista->first);
+    lista::nodoP * particion= nuevo->buscarExistente(usuario->particion, lista->first);
     if(disco_montado !=NULL){
         FILE * archivo_disco = fopen(disco_montado->path, "rb+");
         if(archivo_disco != NULL){
@@ -27,14 +27,14 @@ void RMUSR::ejecutar_RMUSR(objetos::activeUser * usuario, lista::list * lista){
             //buscar particion en el mbr
             int num_particion=-1;
             for(int i=0;i<4;i++){
-                if(strcmp(mbr.mbr_particion[i].part_name,particion->name)==0){
+                if(strcmp(mbr.mbr_partitions[i].part_name,particion->name)==0){
                    num_particion=i;
                    break;
                 }
             }
             //obtener super bloque
             objetos::superBloque super_bloque;
-            fseek(archivo_disco, mbr.mbr_particion[num_particion].part_start, SEEK_SET);
+            fseek(archivo_disco, mbr.mbr_partitions[num_particion].part_start, SEEK_SET);
             fread(&super_bloque, sizeof (objetos::superBloque), 1, archivo_disco);
             //OBTENIENDO inodo DE ARCHIVO USERS
             objetos::inodo *users = (objetos::inodo*) malloc(sizeof (objetos::inodo));
@@ -122,14 +122,14 @@ void RMUSR::ejecutar_RMUSR(objetos::activeUser * usuario, lista::list * lista){
             fseek(archivo_disco, posUser, SEEK_SET);
             fwrite(users, sizeof (objetos::inodo), 1, archivo_disco);
             //Actualizar Super Bloque
-            fseek(archivo_disco, mbr.mbr_particion[num_particion].part_start, SEEK_SET);
+            fseek(archivo_disco, mbr.mbr_partitions[num_particion].part_start, SEEK_SET);
             fwrite(&super_bloque, sizeof (super_bloque), 1, archivo_disco);
             //Verificar si operación fue existosa
             if (existe == 1) {
                 //*** crear journalin
                 //--------------------------------- obtengo la posicion del journal
                 int posjournal =-1;
-                int posicion = mbr.mbr_particion[num_particion].part_start + sizeof (super_bloque);
+                int posicion = mbr.mbr_partitions[num_particion].part_start + sizeof (super_bloque);
                 int a=0;
                 for (int i = posicion; i < super_bloque.s_bm_inode_start; i = i + sizeof (objetos::journal)) {
                     objetos::journal j;
@@ -157,7 +157,7 @@ void RMUSR::ejecutar_RMUSR(objetos::activeUser * usuario, lista::list * lista){
             } else if (existe == -1) {
                cout << "Error, el usuario ya fue eliminado" << endl;
             } else if (existe == 0) {
-               cout << "Error, el usuario no existe" << endl
+               cout << "Error, el usuario no existe" << endl;
             }
             fclose(archivo_disco);
         }else{

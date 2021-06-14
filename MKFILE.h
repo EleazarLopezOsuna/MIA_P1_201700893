@@ -15,14 +15,14 @@
 #include <libgen.h>
 #include <ctype.h>
 using namespace std;
-class mkfile
+class MKFILE
 {
 public:
-  mkfile();
+  MKFILE();
   string path="";
   string r="";
   string cont="";
-  void CrearArchivo(mkfile*file);
+  void CrearArchivo(MKFILE *file);
   char ruta_nArchivo[256];
   int crear;
   int size;
@@ -33,6 +33,7 @@ public:
   void ejecutar_MKFILE2(lista::list * lista , objetos::activeUser * usuario,char txt[14000]);
   int VerificarPath(char path[]);
   int ContadorTipoPunto(char *string);
+  int PosBitmap(int inicio, int max, int tamanio);
 };
 
 #endif // MKFILE_H
