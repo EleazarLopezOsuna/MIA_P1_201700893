@@ -49,13 +49,14 @@ public:
 	struct REP{
 		char path[255];
 		char ruta[255];
+        char name[255];
 		char id[10];
 		int f_disk;
 		int f_mbr;
 		int f_rep;
 		int f_nombre;
 		int f_path;
-                int f_id;
+        int f_id;
 	};
 	struct mountedPart{
 		char status;

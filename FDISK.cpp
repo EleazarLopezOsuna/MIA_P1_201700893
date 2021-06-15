@@ -8,7 +8,7 @@ FDISK::FDISK(){
 void FDISK::limpiar(){
 	size = NULL;
 	memset(path, 0, 255);
-	memset(nombre, 0, 255);
+    memset(nombre, 0, 16);
 	f_path = false;
 	f_nombre = false;
 	operacion = NULL;

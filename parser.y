@@ -4,21 +4,22 @@
 #include <string>
 #include "qdebug.h"
 #include <iostream>
-#include "MKDISK.h"
-#include "RMDISK.h"
+#include <MKDISK.h>
+#include <RMDISK.h>
 #include "FDISK.h"
 #include "MOUNT.h"
+#include "MKFS.h"
+#include "LOGIN.h"
+#include "LOGOUT.h"
+#include "MKGRP.h"
+#include "RMGRP.h"
+#include "RMUSR.h"
+#include "MKFILE.h"
+#include "CAT.h"
+#include "REP.h"
 //#include "unmount.h"
-//#include "mkfs.h"
-//#include "login.h"
-//#include "logout.h"
-//#include "mkgrp.h"
-//#include "rmgrp.h"
 //#include "mkusr.h"
-//#include "rmusr.h"
 //#include "Chmod.h"
-//#include "mkfile.h"
-//#include "cat.h"
 //#include "rem.h"
 //#include "edit.h"
 //#include "ren.h"
@@ -29,7 +30,6 @@
 //#include "cchown.h"
 //#include "chgrp.h"
 //#include "ppause.h"
-//#include "reportes.h"
 
 using namespace std;
 extern int yylineno; //linea actual donde se encuentra el parser (analisis lexico) lo maneja BISON
@@ -43,32 +43,32 @@ FDISK *administrado=new FDISK();
 MOUNT * montaje = new MOUNT(1);
 MOUNT * desmontaje = new MOUNT(2);
 //unmount * desmontar=new unmount();
-//mkfs * formateo=new mkfs();
-//login * entrar=new login();
-//logout * salir=new logout();
-//mkgrp* grupo=new mkgrp();
-//rmgrp *elgrupo=new rmgrp();
+MKFS * formateo=new MKFS();
+LOGIN * entrar=new LOGIN();
+LOGOUT * salir=new LOGOUT();
+MKGRP* grupo=new MKGRP();
+RMGRP *elgrupo=new RMGRP();
 //mkusr* usuario=new mkusr();
-//rmusr* elusuario=new rmusr();
+RMUSR* elusuario=new RMUSR();
 //Chmod* elusuario1=new Chmod();
-//mkfile* file=new mkfile();
-//cat * mostrar=new cat();
+MKFILE* file=new MKFILE();
+CAT * mostrar=new CAT();
+REP * reporte = new REP();
+MKDIR * carpeta=new MKDIR();
+objetos::REP nuevo_reporte;
+lista::list *listx;
+objetos::activeUser * activo;
 //rem * elimina=new rem();
 //edit * editar=new edit();
 //ren * modificar=new ren();
-//Mkdir * carpeta=new Mkdir();
 //cp * copiar=new cp();
 //mv * mover=new mv();
 //fFind * buscar=new fFind();
 //cchown * cambiar=new cchown();
 //chgrp * cambio=new chgrp();
 //ppause * pausa=new ppause();
-//Estructuras::REP nuevo_reporte;
-//reportes * reporte = new reportes();
-lista::list *listx;
-//Estructuras::user_activo * activo;
 
-void setSalida(lista::list * l_general , Estructuras::user_activo * user){
+void setSalida(lista::list * l_general , objetos::activeUser * user){
     listx = l_general;
     activo = user;
 }
@@ -194,28 +194,28 @@ char TEXT [256];
 %token<TEXT> ruta_carpeta;
 %token<TEXT> pass;
 %token<TEXT> rutacualquiera;
-//%type<TEXT> PAUSE;
-//%type<TEXT> COMANDOCHGRP;
-//%type<TEXT> COMANDOREP;
-//%type<TEXT> REPORTES;
-//%type<TEXT> COMANDOCHMOD;
-//%type<TEXT> RMUSR;
-//%type<TEXT> RMGRP;
-//%type<TEXT> COMANDOMKUSR;
-//%type<TEXT> MKGRP;
-//%type<TEXT> COMANDOLOGIN;
-//%type<TEXT> COMANDOMKFS;
-//%type<TEXT> SISTEMA_FORMATEO;
+%type<TEXT> PAUSE;
+%type<TEXT> COMANDOCHGRP;
+%type<TEXT> COMANDOREP;
+%type<TEXT> REPORTES;
+%type<TEXT> COMANDOCHMOD;
+%type<TEXT> COMANDORMUSR;
+%type<TEXT> COMANDORMGRP;
+%type<TEXT> COMANDOMKUSR;
+%type<TEXT> COMANDOMKGRP;
+%type<TEXT> COMANDOLOGIN;
+%type<TEXT> COMANDOMKFS;
+%type<TEXT> SISTEMA_FORMATEO;
 %type<TEXT> COMANDOMKDISK; // lista de instrucciones
-//%type<TEXT>COMANDOCHOWN;
-//%type<TEXT>COMANDOMV;
-//%type<busca>COMANDOFIND;
-//%type<TEXT>COMANDOCP;
-//%type<TEXT>COMANDOMKDIR;
-//%type<TEXT>COMANDOREN;
-//%type<TEXT>COMANDOEDIT;
-//%type<TEXT>PASS;
-//%type<TEXT>COMANDOMKFILE;
+%type<TEXT>COMANDOCHOWN;
+%type<TEXT>COMANDOMV;
+%type<TEXT>COMANDOFIND;
+%type<TEXT>COMANDOCP;
+%type<TEXT>COMANDOMKDIR;
+%type<TEXT>COMANDOREN;
+%type<TEXT>COMANDOEDIT;
+%type<TEXT>PASS;
+%type<TEXT>COMANDOMKFILE;
 %type<TEXT>COMANDOFDISK;
 %type<TEXT>COMANDOMOUNT;
 %type<TEXT>RUTA_CADENA;
@@ -226,7 +226,7 @@ char TEXT [256];
 %type<TEXT>NAME;
 %type<TEXT>UNIDADES1;
 %type<TEXT>UNIDADES2;
-//%type<TEXT>NAME_REPS;
+%type<TEXT>NAME_REPS;
 %type<TEXT>COMENTS;
 %left suma menos
 %left multi division
@@ -239,28 +239,28 @@ INICIO : MKDISK { }
     | FDISK{}
     | MOUNT{}
     | UNMOUNT{}
-    /*| MKFS{}
+    | MKFS{}
     | LOGIN{}
     | LOGOUT{}
-    | MKGRP{}
-    | RMGRP{}
+    | COMANDOMKGRP{}
+    | COMANDORMGRP{}
     | MKUSR{}
-    | RMUSR{}
-    | CHMOD{}
+    | COMANDORMUSR{}
     | MKFILE{}
-    | REM{}
     | CAT{}
+    | MKDIR{}
+    | REPORTES{}
+    | EXEC{}
+    | PAUSE{}
+    | CHMOD{}
+    | REM{}
     | EDIT{}
     | REN{}
-    | MKDIR{}
     | CP{}
     | MV{}
     | FIND{}
     | CHOWN{}
     | CHGRP{}
-    | REPORTES{}
-    | EXEC{}
-    | PAUSE{}*/
 ;
 MKDISK:  pmkdisk COMANDOMKDISK
     {
@@ -530,10 +530,10 @@ UNMOUNT: punmount menos pid igual identificador
         desmontaje->limpiar_u();
     }
 ;
-/*MKFS: pmkfs COMANDOMKFS
+MKFS: pmkfs COMANDOMKFS
     {
         if(formateo->par_id == true){
-            formateo->ejecutar_MKFS(lista);
+            formateo->ejecutar_MKFS(listx);
         }else{
             std::cout<<"Error, no se cumple con el parametro ID -> MKFS"<<std::endl;
         }
@@ -543,7 +543,7 @@ LOGIN:  plogin COMANDOLOGIN
     {
         if(activo->estado !='1'){
             if(entrar->par_id == true && entrar->par_pass == true && entrar->par_user == true ){
-                entrar->ejecutar_login(lista , activo);
+                entrar->ejecutar_LOGIN(listx,activo);
                 if(activo->estado==-1){
 
                 }else{
@@ -573,17 +573,17 @@ LOGOUT: plogout
         }
     }
 ;
-MKGRP: pmkgrp menos pname igual NAME
+COMANDOMKGRP: pmkgrp menos pname igual NAME
     {
         grupo->tipo = 1;
         strcpy(grupo->nombre, $5);
-        grupo->ejecutar(activo, lista);
+        grupo->ejecutar(activo, listx);
     }
 ;
-RMGRP: prmgrp menos pname igual NAME
+COMANDORMGRP: prmgrp menos pname igual NAME
     {
         strcpy(elgrupo->nombre, $5);
-        elgrupo->ejecutar_rmgrp(activo, lista);
+        elgrupo->ejecutar_RMGRP(activo, listx);
         elgrupo->limpar();
     }
 ;
@@ -591,117 +591,44 @@ MKUSR: pmkusr COMANDOMKUSR
     {
         if(grupo->par_usr == true && grupo->par_pwd == true && grupo->par_grp == true){
             grupo->tipo=2;
-            grupo->ejecutar(activo, lista);
+            grupo->ejecutar(activo, listx);
         }else{
             std::cout<<"Error, no se cumplen con los parametros -> MKUSR"<<std::endl;
         }
     }
 ;
-RMUSR: prmusr menos pusr igual NAME
+COMANDORMUSR: prmusr menos pusr igual NAME
     {
         strcpy(elusuario->nombre, $5);
-        elusuario->ejecutar_rmusr(activo, lista);
+        elusuario->ejecutar_RMUSR(activo, listx);
         elusuario->limpar();
     }
 ;
-CHMOD: pchmod COMANDOCHMOD
-    {
-        if(elusuario1->ruta !="" ){
-            elusuario1->ejecutar_CHMOD(lista, activo);
-            elusuario1->limpiar();
-        }else{
-            std::cout<<"Error, no se cumple con el parametro PATH -> MKFILE"<<std::endl;
-        }
-    }
-;
+
 MKFILE: pmkfile COMANDOMKFILE
     {
         if(file->par_ruta == true){
-            file->ejecutar_MKFILE(lista, activo);
+            file->ejecutar_MKFILE(listx, activo);
             file->limpiar();
         }else{
             std::cout<<"Error, no se cumple con el parametro PATH -> MKFILE"<<std::endl;
         }
     }
 ;
-REM: prem menos ppath igual RUTA_CADENA
-    {
-        strcpy(elimina->ruta, $5);
-        elimina->ejecutar_REM(lista, activo);
-    }
-;
+
 CAT: pcat menos pfilen igual RUTA_CADENA
     {
         strcpy(mostrar->ruta, $5);
-        mostrar->ejecutar_cat(lista, activo);
-    }
-;
-EDIT: pedit COMANDOEDIT
-    {
-        editar->ejecutar_edit(lista, activo);
-        editar->limpiar();
-    }
-;
-REN: pren COMANDOREN
-    {
-        modificar->REN(lista, activo);
+        mostrar->ejecutar_CAT(listx, activo);
     }
 ;
 MKDIR: pmkdir COMANDOMKDIR
     {
         if(carpeta->par_path ==1){
-            carpeta->ejecutar_mkdir(lista, activo);
+            carpeta->ejecutar_MKDIR(listx, activo);
             carpeta->limpiar();
         }else{
             std::cout<<"Error, no se cumple con el parametro PATH -> MKDIR"<<std::endl;
-        }
-    }
-;
-CP: pcp COMANDOCP
-    {
-        if(copiar->par_ruta == true){
-            copiar->CP(lista, activo);
-            copiar->limpiar();
-        }else{
-            std::cout<<"Error, no se cumple con el parametro PATH -> CP"<<std::endl;
-        }
-    }
-;
-MV: pmv COMANDOMV
-    {
-        if(mover->par_ruta == true){
-            mover->MV(lista, activo);
-            mover->limpiar();
-        }else{
-            std::cout<<"Error, no se cumple con el parametro PATH -> MV"<<std::endl;
-        }
-    }
-;
-FIND: pfind COMANDOFIND
-    {
-        if(buscar->par_ruta == true && buscar->par_nombre == true){
-            buscar->ejecutar_find(lista, activo);
-            buscar->limpiar();
-        }
-    }
-;
-CHOWN: pchown COMANDOCHOWN
-    {
-        if(cambiar->par_ruta == true){
-            cambiar->CHOWN(lista, activo);
-            cambiar->limpiar();
-        }else{
-            std::cout<<"Error, no se cumple con el parametro PATH -> CHOWN"<<std::endl;
-        }
-    }
-;
-CHGRP: pchgrp COMANDOCHGRP
-    {
-        if(cambio->user != ""){
-            cambio->CHGRP(lista,activo);
-            cambio->limpiar();
-        }else{
-            std::cout<<"Error, no se cumple con el parametro USR -> CHGRP"<<std::endl;
         }
     }
 ;
@@ -710,25 +637,25 @@ REPORTES:   prep COMANDOREP
         //Verifica que los parametros obligatorios fueron ingresados
         if(nuevo_reporte.f_nombre ==1 && nuevo_reporte.f_path ==1 && nuevo_reporte.f_id==1){
             // revisar parametro RUTA para los repores file y ls
-            if(nuevo_reporte.rep2 == 2 || nuevo_reporte.rep2 == 9){
-                if(reporte->z == false){
+            if(nuevo_reporte.f_rep == 2 || nuevo_reporte.f_rep == 9){
+                if(reporte->par_ra == false){
                     std::cout<<"Error, no se cumple con el parametro RUTA -> REP"<<std::endl;
                 }else{
-                    reporte->ejecutar_REP(lista,  nuevo_reporte);
+                    reporte->ejecutar_REP(listx,  nuevo_reporte);
                     memset(reporte->ruta_disco, 0, 255);
                     memset(reporte->ruta_reporte, 0, 255);
-                    nuevo_reporte.isDisk =0;
-                    nuevo_reporte.isMbr =0;
+                    nuevo_reporte.f_disk =0;
+                    nuevo_reporte.f_mbr =0;
                     nuevo_reporte.f_nombre=0;
                     nuevo_reporte.f_path=0;
                     nuevo_reporte.f_id=0;
                 }
             }else{
-                reporte->ejecutar_REP(lista,  nuevo_reporte);
+                reporte->ejecutar_REP(listx,  nuevo_reporte);
                 memset(reporte->ruta_disco, 0, 255);
                 memset(reporte->ruta_reporte, 0, 255);
-                nuevo_reporte.isDisk =0;
-                nuevo_reporte.isMbr =0;
+                nuevo_reporte.f_disk =0;
+                nuevo_reporte.f_mbr =0;
                 nuevo_reporte.f_nombre=0;
                 nuevo_reporte.f_path=0;
                 nuevo_reporte.f_id=0;
@@ -742,12 +669,12 @@ REPORTES:   prep COMANDOREP
             memset(nuevo_reporte.name, '\0', 255);
             memset(nuevo_reporte.id, '\0', 10);
 
-            nuevo_reporte.isDisk =0;
-            nuevo_reporte.isMbr =0;
+            nuevo_reporte.f_disk =0;
+            nuevo_reporte.f_mbr =0;
             nuevo_reporte.f_nombre=0;
             nuevo_reporte.f_path=0;
             nuevo_reporte.f_id=0;
-            nuevo_reporte.rep2 =0;
+            nuevo_reporte.f_rep =0;
         }else{
             std::cout<<"Error, los parametros obligatorios no fueron ingresados -> REP"<<std::endl;
         }
@@ -763,7 +690,7 @@ EXEC: pexec menos ppath igual RUTA_CADENA
             char content[1024];
             strcpy(content, contenidoLinea.c_str());
             yy_scan_string(content);
-            setSalida(lista, activo);
+            setSalida(listx, activo);
             yyparse();
         }
         archivo.close();
@@ -801,131 +728,66 @@ COMANDOREP: menos pname igual NAME_REPS COMANDOREP
 ;
 NAME_REPS : pmbr
         {
-            nuevo_reporte.isMbr = 1;
+            nuevo_reporte.f_mbr = 1;
         }
     | pdisk
         {
-            nuevo_reporte.isDisk = 1;
+            nuevo_reporte.f_disk = 1;
         }
     | psb
         {
-            nuevo_reporte.rep2 = 1;
-            nuevo_reporte.isDisk = 0;
-            nuevo_reporte.isMbr = 0;
+            nuevo_reporte.f_rep = 1;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
         }
     | pbm_inode
         {
-            nuevo_reporte.rep2 = 3;
-            nuevo_reporte.isDisk = 0;
-            nuevo_reporte.isMbr = 0;
+            nuevo_reporte.f_rep = 3;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
         }
     | pbm_block
         {
-            nuevo_reporte.rep2 = 4;
-            nuevo_reporte.isDisk = 0;
-            nuevo_reporte.isMbr = 0;
+            nuevo_reporte.f_rep = 4;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
         }
     | pinode
         {
-            nuevo_reporte.rep2 =5;
-            nuevo_reporte.isDisk =0;
-            nuevo_reporte.isMbr =0;
+            nuevo_reporte.f_rep =5;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
          }
     | ptree
         {
-            nuevo_reporte.rep2 = 6;
-            nuevo_reporte.isDisk = 0;
-            nuevo_reporte.isMbr = 0;
+            nuevo_reporte.f_rep = 6;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
         }
     | pblock
         {
-            nuevo_reporte.rep2 = 7;
-            nuevo_reporte.isDisk = 0;
-            nuevo_reporte.isMbr = 0;
+            nuevo_reporte.f_rep = 7;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
         }
     | pjournaling
         {
-            nuevo_reporte.rep2 = 8;
-            nuevo_reporte.isDisk = 0;
-            nuevo_reporte.isMbr = 0;
+            nuevo_reporte.f_rep = 8;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
         }
     | pfilen
         {
-            nuevo_reporte.rep2 = 2;
-            nuevo_reporte.isDisk = 0;
-            nuevo_reporte.isMbr = 0;
+            nuevo_reporte.f_rep = 2;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
         }
     | pls
         {
-            nuevo_reporte.rep2 = 9;
-            nuevo_reporte.isDisk = 0;
-            nuevo_reporte.isMbr = 0;
+            nuevo_reporte.f_rep = 9;
+            nuevo_reporte.f_disk = 0;
+            nuevo_reporte.f_mbr = 0;
         }
-;
-COMANDOCHGRP: menos pgrp igual NAME COMANDOCHGRP
-        {
-            cambio->grupo = $4;
-        }
-    | menos pusr igual NAME COMANDOCHGRP
-        {
-            cambio->user = $4;
-        }
-    | {}
-;
-COMANDOCHOWN: menos ppath igual RUTA_CADENA COMANDOCHOWN
-        {
-            strcpy(cambiar->ruta, $4);
-            cambiar->par_ruta = true;
-        }
-    | menos pusr igual NAME COMANDOCHOWN
-        {
-            cambiar->user = $4;
-        }
-    | menos pr COMANDOCHOWN
-        {
-            cambiar->r=true;
-        }
-    | {}
-;
-COMANDOFIND: menos ppath igual RUTA_CADENA COMANDOFIND
-        {
-            strcpy(buscar->ruta, $4);
-            buscar->par_ruta = true;
-        }
-    | menos pname igual identificador COMANDOFIND
-        {
-            strcpy(buscar->nombre, $4);
-            buscar->par_nombre = true;
-        }
-    | menos pname igual name2 COMANDOFIND
-        {
-            strcpy(buscar->nombre, $4);
-            buscar->par_nombre = true;
-        }
-    | {}
-;
-COMANDOMV: menos ppath igual RUTA_CADENA COMANDOMV
-        {
-            strcpy(mover->ruta, $4);
-            mover->par_ruta = true;
-        }
-    | menos pdest igual RUTA_CADENA COMANDOMV
-        {
-            mover->dest2 = $4;
-        }
-    | {}
-;
-
-COMANDOCP: menos ppath igual RUTA_CADENA COMANDOCP
-        {
-            strcpy(copiar->ruta, $4);
-            copiar->par_ruta = true;
-        }
-    | menos pdest igual RUTA_CADENA COMANDOCP
-        {
-            copiar->dest2 = $4;
-        }
-    | {}
 ;
 COMANDOMKDIR: menos ppath igual RUTA_CADENA COMANDOMKDIR
         {
@@ -935,30 +797,6 @@ COMANDOMKDIR: menos ppath igual RUTA_CADENA COMANDOMKDIR
     | menos pp COMANDOMKDIR
         {
             carpeta->crear =1;
-        }
-    | {}
-;
-COMANDOREN: menos ppath igual RUTA_CADENA COMANDOREN
-        {
-            strcpy(modificar->ruta, $4);
-        }
-    | menos pname igual NAME COMANDOREN
-        {
-            strcpy(modificar->nombre, $4);
-        }
-    | menos pname igual name2 COMANDOREN
-        {
-            strcpy(modificar->nombre, $4);
-        }
-    | {}
-;
-COMANDOEDIT: menos ppath igual  RUTA_CADENA COMANDOEDIT
-        {
-            strcpy(editar->ruta, $4);
-        }
-    | menos pcont igual  RUTA_CADENA COMANDOEDIT
-        {
-            strcpy(editar->cont, $4);
         }
     | {}
 ;
@@ -982,17 +820,8 @@ COMANDOMKFILE: menos ppath igual RUTA_CADENA COMANDOMKFILE
     | {}
 ;
 COMANDOCHMOD: menos ppath igual RUTA_CADENA COMANDOCHMOD
-        {
-            strcpy(elusuario1->ruta, $4);
-        }
     | menos pugo igual entero COMANDOCHMOD
-        {
-            elusuario1->ugo = atoi($4);
-        }
     | menos pr COMANDOCHMOD
-        {
-            elusuario1->r = true;
-        }
     | {}
 ;
 COMANDOMKUSR: menos pusr igual NAME COMANDOMKUSR
@@ -1054,4 +883,56 @@ SISTEMA_FORMATEO: p2fs
             formateo->ext3 = true;
         }
 ;
-*/
+
+
+
+
+CHMOD: pchmod COMANDOCHMOD
+;
+COMANDOREN: menos ppath igual RUTA_CADENA COMANDOREN
+    | menos pname igual NAME COMANDOREN
+    | menos pname igual name2 COMANDOREN
+    | {}
+;
+COMANDOEDIT: menos ppath igual  RUTA_CADENA COMANDOEDIT
+    | menos pcont igual  RUTA_CADENA COMANDOEDIT
+    | {}
+;
+CP: pcp COMANDOCP
+;
+MV: pmv COMANDOMV
+;
+REM: prem menos ppath igual RUTA_CADENA
+;
+EDIT: pedit COMANDOEDIT
+;
+REN: pren COMANDOREN
+;
+FIND: pfind COMANDOFIND
+;
+CHOWN: pchown COMANDOCHOWN
+;
+CHGRP: pchgrp COMANDOCHGRP
+;
+COMANDOCHGRP: menos pgrp igual NAME COMANDOCHGRP
+    | menos pusr igual NAME COMANDOCHGRP
+    | {}
+;
+COMANDOCHOWN: menos ppath igual RUTA_CADENA COMANDOCHOWN
+    | menos pusr igual NAME COMANDOCHOWN
+    | menos pr COMANDOCHOWN
+    | {}
+;
+COMANDOFIND: menos ppath igual RUTA_CADENA COMANDOFIND
+    | menos pname igual identificador COMANDOFIND
+    | menos pname igual name2 COMANDOFIND
+    | {}
+;
+COMANDOMV: menos ppath igual RUTA_CADENA COMANDOMV
+    | menos pdest igual RUTA_CADENA COMANDOMV
+    | {}
+;
+COMANDOCP: menos ppath igual RUTA_CADENA COMANDOCP
+    | menos pdest igual RUTA_CADENA COMANDOCP
+    | {}
+;
