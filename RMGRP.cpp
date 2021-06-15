@@ -55,7 +55,6 @@ void RMGRP::ejecutar_RMGRP(objetos::activeUser * usuario, lista::list * lista){
             int id = 0;
             char tipo = 'A';
             char nameGroup[11];
-            char nameUser[11];
             int existe = 0;
             char lineGroup[20];
             char lineUser[40];
@@ -73,7 +72,6 @@ void RMGRP::ejecutar_RMGRP(objetos::activeUser * usuario, lista::list * lista){
                         id = 0;
                         tipo = 'A';
                         memset(nameGroup, 0, sizeof (nameGroup));
-                        memset(nameUser, 0, sizeof (nameUser));
                         memset(lineGroup, 0, sizeof (lineGroup));
                         memset(lineUser, 0, sizeof (lineUser));
                         //Almacenando

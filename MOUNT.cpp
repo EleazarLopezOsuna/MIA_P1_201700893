@@ -60,14 +60,16 @@ lista::nodoC *MOUNT::insertar(lista::list ** lista, int character, objetos::MOUN
 	return newNodo;
 }
 lista::nodoC *MOUNT::buscar(char path[], lista::nodoC *pivote){
-	if(pivote == NULL)
+    if(pivote == NULL){
 		return NULL;
-	else
+    }
+    else{
         while(pivote != NULL){
 			if(strcmp(pivote->path, path) == 0)
 				return pivote;
             pivote = pivote->next;
 		}
+    }
 	return NULL;
 }
 void MOUNT::eliminar(lista::list **lista, int character, lista::nodoC *pivote){
@@ -99,7 +101,8 @@ void MOUNT::mostrar(lista::nodoC *pivote){
             if(tmp != NULL){
 				cout << "Disco montado " << pivote->path <<endl;
 				do{
-					cout << "Particion: " << tmp->name;
+                    cout << "Particion: " << tmp->name << endl;
+                    cout << "Id: " << tmp->id << endl;
                     tmp = tmp->next;
 				}while(tmp != NULL);
 			}
@@ -110,13 +113,12 @@ void MOUNT::mostrar(lista::nodoC *pivote){
 void MOUNT::ejecutarM(objetos::MOUNT mount, lista::list *listaP){
 	objetos::MBR mbr;
 	FILE *file = fopen(mount.path, "rb+");
-	if(file != NULL){
+    if(file != NULL){
 		fseek(file, 0, SEEK_SET);
 		fread(&mbr, sizeof(objetos::MBR), 1, file);
 		int f_existe = 0;
 		int f_existe_logica = 0;
-		int index_extendida = 0;
-		int pos_particion = 0;
+        int index_extendida = 0;
 		for(int i = 0; i < 4; i++){
 			if(strcmp(mbr.mbr_partitions[i].part_name, mount.name) == 0){
 				f_existe++;
@@ -135,13 +137,13 @@ void MOUNT::ejecutarM(objetos::MOUNT mount, lista::list *listaP){
 			if(no_existe_logica(ebr, mount, mbr) != 0){
 				f_existe_logica++;
 			}
-		}
+        }
 		if(f_existe == 0 || f_existe_logica == 0){
 			cout << "Error, la particion no existe" << endl;
-		}else{
+        }else{
             lista::nodoC *nodo = buscar(mount.path, listaP->first);
 			if(nodo != NULL){
-				if((buscarP(mount.name, nodo)) == NULL){
+                if((buscarP(mount.name, nodo)) != NULL){
 					cout << "Error, la particion ya esta montada" << endl;
 				}else{
 					insertarP(&(nodo->particiones), nodo, mount, nodo->particiones->first);
@@ -190,6 +192,7 @@ void MOUNT::insertarP(lista::listaParticiones **lista, lista::nodoC *nodo, objet
 	newNodo->id[0] = '9';
 	newNodo->id[1] = '3';
 	newNodo->id[3] = nodo->character;
+    newNodo->id[4] = '\0';
 	newNodo->next = NULL;
 	newNodo->prev = NULL;
 	if((*lista)->first == NULL){

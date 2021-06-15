@@ -113,7 +113,7 @@ void REP::graficar_MBR(char path[255], objetos::REP rep){
         int size = mbr.mbr_tamano;
         int sig = mbr.mbr_disk_signature;
         char fit = mbr.mbr_disk_fit;
-        doc = fopen("/home/jared/Escritorio/reportes/reporte_mbr.dot","w");
+        doc = fopen("/home/archivos/reportesreporte_mbr.dot","w");
         fprintf(doc,"digraph reporte{ \n");
         fprintf(doc,"tbl [ shape=plaintext \n");
         fprintf(doc,"   label=< \n");
@@ -263,7 +263,7 @@ void REP::graficar_MBR(char path[255], objetos::REP rep){
         fclose(archivo_mbr);
         fprintf(doc,"} \n");
         fclose(doc);
-        strcpy(ejecutarDot, "dot -Tpng /home/jared/Escritorio/reportes/reporte_mbr.dot -o");
+        strcpy(ejecutarDot, "dot -Tpng /home/archivos/reportesreporte_mbr.dot -o");
         strcat(ejecutarDot, " ");
         strcat(ejecutarDot, ruta_reporte);
         system(ejecutarDot);
@@ -342,7 +342,7 @@ void REP::graficar_Disk(char path[255], objetos::REP rep){
                 }
             }
             FILE *doc_disk;
-            doc_disk = fopen("/home/jared/Escritorio/reportes/reporte_disk.dot","w");
+            doc_disk = fopen("/home/archivos/reportesreporte_disk.dot","w");
             fprintf(doc_disk,"digraph reporte{ \n");
             fprintf(doc_disk,"label= %s \n",rep.id);
             fprintf(doc_disk,"tbl [ shape=plaintext \n");
@@ -415,7 +415,7 @@ void REP::graficar_Disk(char path[255], objetos::REP rep){
             fprintf(doc_disk,"} \n");
             fseek(archivo_disco, 0, SEEK_SET);
             fclose(doc_disk);
-            strcpy(ejecutarDot_disk, "dot -Tpng /home/jared/Escritorio/reportes/reporte_disk.dot -o");
+            strcpy(ejecutarDot_disk, "dot -Tpng /home/archivos/reportesreporte_disk.dot -o");
             strcat(ejecutarDot_disk, " ");
             strcat(ejecutarDot_disk, ruta_reporte);
             system(ejecutarDot_disk);
@@ -518,7 +518,7 @@ void REP::rep_ls(char path[255],lista::nodoP * particion){
         FILE *doc;
         FILE *archivo_mbr;
         archivo_mbr = fopen(path, "rb+");
-        doc = fopen("/home/jared/Escritorio/reportes/reporte_ls.dot","w");
+        doc = fopen("/home/archivos/reportesreporte_ls.dot","w");
         fprintf(doc,"digraph reporte{ \n");
         fprintf(doc,"  reporte [ shape=plaintext  \n");
         fprintf(doc,"  label=<  \n");
@@ -562,7 +562,7 @@ void REP::rep_ls(char path[255],lista::nodoP * particion){
         fprintf(doc," </table> \n");
         fprintf(doc," >]; }\n");
         fclose(doc);
-        strcpy(ejecutarDot, "dot -Tpdf /home/jared/Escritorio/reportes/reporte_ls.dot -o");
+        strcpy(ejecutarDot, "dot -Tpdf /home/archivos/reportesreporte_ls.dot -o");
         strcat(ejecutarDot, " ");
         strcat(ejecutarDot, ruta_reporte);
         system(ejecutarDot);
@@ -669,14 +669,14 @@ void REP::rep_file(char path[255],lista::nodoP * particion){
         cout<<"Nombre de archivo: "<<filename<<endl;
         printf("%s\n", sis->ObtenerTexto(fp1, super, inodoArchivo));
         FILE *doc_sb;
-        doc_sb = fopen("/home/jared/Escritorio/reportes/file.dot","w");
+        doc_sb = fopen("/home/archivos/reportesfile.dot","w");
         fprintf(doc_sb,"digraph reporte{ \n");
         fprintf(doc_sb,"Nombre-> Contenido \n");
         fprintf(doc_sb," Nombre [label=\"%s\",shape=Mdiamond]; \n",filename);
         fprintf(doc_sb," Contenido[label=\"%s\",shape=Mdiamond]; \n",sis->ObtenerTexto(fp1, super, inodoArchivo));
         fprintf(doc_sb,"}\n");
         fclose(doc_sb);
-        strcpy(ejecutarDot, "dot -Tpdf /home/jared/Escritorio/reportes/file.dot -o");
+        strcpy(ejecutarDot, "dot -Tpdf /home/archivos/reportesfile.dot -o");
         strcat(ejecutarDot, " ");
         strcat(ejecutarDot, ruta_reporte);
         system(ejecutarDot);
@@ -713,7 +713,6 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
         archivo_mbr = fopen(path, "rb+");
         //leer mbr
         if(archivo_mbr !=NULL){
-            printf("entre al archivo \n");
             fseek(archivo_mbr,0,SEEK_SET); //para escribir en el archivo me coloco al inicio.
             fread(&mbr,sizeof(objetos::MBR),1,archivo_mbr); //leo el mbr del disco
         }
@@ -728,7 +727,7 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
         }
         //si se encontro la particion en el mbr del disco se prosede a ubicarse en el inicio de la particion y se lee el super bloque
         objetos::superBloque super_bloque;
-        if(num_particion!=-1){
+        if(num_particion != -1){
             fseek(archivo_mbr,mbr.mbr_partitions[num_particion].part_start,SEEK_SET);
             fread(&super_bloque,sizeof(objetos::superBloque),1,archivo_mbr);
         }else{
@@ -739,7 +738,7 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
         if(super_bloque.s_magic == 61267){
         //crear el reporte
             FILE *doc_sb;
-            doc_sb = fopen("/home/jared/Escritorio/reportes/super.s_dot","w");
+            doc_sb = fopen("/home/archivos/reportessuper.s_dot","w");
             fprintf(doc_sb,"digraph reporte{ \n");
             fprintf(doc_sb,"tbl [ shape=plaintext \n");
             fprintf(doc_sb,"   label=< \n");
@@ -815,7 +814,7 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
             fclose(archivo_mbr);
             fprintf(doc_sb,"} \n");
             fclose(doc_sb);
-            strcpy(ejecutarDot, "dot -Tpdf /home/jared/Escritorio/reportes/super.s_dot -o");
+            strcpy(ejecutarDot, "dot -Tpdf /home/archivos/reportessuper.s_dot -o");
             strcat(ejecutarDot, " ");
             strcat(ejecutarDot, ruta_reporte);
             system(ejecutarDot);
@@ -824,7 +823,8 @@ void REP::rep_sb( char path[255],lista::nodoP * particion ){
             strcat(ruta, ruta_reporte);
             system(ruta);
         }else{
-            cout<<" **ERROR: no se pudo recuperar la informacion del formato de la particion"<<endl;
+            cout << super_bloque.s_magic << endl;
+            cout <<"Error, no se pudo recuperar la informacion del formato de la particion" <<endl;
             return;
         }
     }
@@ -1061,7 +1061,7 @@ void REP::rep_inodos( char path[255],lista::nodoP * particion ){
         //comprobando que el superbloque este bien
         if(super_bloque.s_magic == 61267){
             //crear el reporte
-            doc = fopen("/home/jared/Escritorio/reportes/reporte_inodos.dot","w");
+            doc = fopen("/home/archivos/reportesreporte_inodos.dot","w");
              //** contenido del reporte
             fprintf(doc, "digraph Reporte{\n");
             fprintf(doc, "rankdir = \"LR\";\n");
@@ -1075,7 +1075,7 @@ void REP::rep_inodos( char path[255],lista::nodoP * particion ){
             flechas_inodos(super_bloque, doc);
             fprintf(doc, "}\n");
             fclose(doc);
-            strcpy(ejecutarDot, "dot -Tpdf /home/jared/Escritorio/reportes/reporte_inodos.dot -o");
+            strcpy(ejecutarDot, "dot -Tpdf /home/archivos/reportesreporte_inodos.dot -o");
             strcat(ejecutarDot, " ");
             strcat(ejecutarDot, ruta_reporte);
             system(ejecutarDot);
@@ -1238,7 +1238,7 @@ void REP::rep_arbol( char path[255],lista::nodoP * particion ){
         //comprobando que el superbloque este bien
         if(super_bloque.s_magic == 61267){
             //crear el reporte
-            doc = fopen("/home/jared/Escritorio/reportes/reporte_arbol.dot","w");
+            doc = fopen("/home/archivos/reportesreporte_arbol.dot","w");
             //** contenido del reporte
             fprintf(doc, "digraph Reporte{\n");
             fprintf(doc, "rankdir = \"LR\"\n");
@@ -1253,7 +1253,7 @@ void REP::rep_arbol( char path[255],lista::nodoP * particion ){
             ApuntadoresArbol(super_bloque, 0, super_bloque.s_inode_start, archivo_mbr, doc);
             fprintf(doc, "}\n");
             fclose(doc);
-            strcpy(ejecutarDot, "dot -Tpdf /home/jared/Escritorio/reportes/reporte_arbol.dot -o");
+            strcpy(ejecutarDot, "dot -Tpdf /home/archivos/reportesreporte_arbol.dot -o");
             strcat(ejecutarDot, " ");
             strcat(ejecutarDot, ruta_reporte);
             system(ejecutarDot);
@@ -1622,7 +1622,7 @@ void REP::rep_bloques( char path[255],lista::nodoP * particion ){
         //comprobando que el superbloque este bien
         if(super_bloque.s_magic == 61267){
             //crear el reporte
-            doc = fopen("/home/jared/Escritorio/reportes/bloques.dot","w");
+            doc = fopen("/home/archivos/reportesbloques.dot","w");
             //** contenido del reporte
             fprintf(doc, "digraph Reporte{\n");
             fprintf(doc, "rankdir = \"LR\";\n");
@@ -1636,7 +1636,7 @@ void REP::rep_bloques( char path[255],lista::nodoP * particion ){
             fprintf(doc, "}\n");
             fclose(doc);
             cout<<"MORI"<<endl;
-            strcpy(ejecutarDot, "dot -Tpdf /home/jared/Escritorio/reportes/bloques.dot -o");
+            strcpy(ejecutarDot, "dot -Tpdf /home/archivos/reportesbloques.dot -o");
             strcat(ejecutarDot, " ");
             strcat(ejecutarDot, ruta_reporte);
             system(ejecutarDot);
@@ -1865,7 +1865,7 @@ void REP::rep_journal( char path[255],lista::nodoP * particion ){
         //comprobando que el superbloque este bien
         if(super_bloque.s_magic == 61267){
             //crear el reporte
-            doc = fopen("/home/jared/Escritorio/reportes/reporte_journal.dot","w");
+            doc = fopen("/home/archivos/reportesreporte_journal.dot","w");
             //** contenido del reporte
             fprintf(doc, "digraph Reporte{\n");
             fprintf(doc, "rankdir = \"LR\";\n");
@@ -1882,7 +1882,7 @@ void REP::rep_journal( char path[255],lista::nodoP * particion ){
             fprintf(doc, "}\n");
             fclose(doc);
             fclose(archivo_mbr);
-            strcpy(ejecutarDot, "dot -Tpdf /home/jared/Escritorio/reportes/reporte_journal.dot -o");
+            strcpy(ejecutarDot, "dot -Tpdf /home/archivos/reportesreporte_journal.dot -o");
             strcat(ejecutarDot, " ");
             strcat(ejecutarDot, ruta_reporte);
             system(ejecutarDot);

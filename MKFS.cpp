@@ -187,7 +187,7 @@ void MKFS::escribirBitmapBloques(objetos::superBloque s_bloque, FILE* archivo_di
 }
 void MKFS::crearArchivoUsuarios(objetos::bloqueCarpeta Bloque, FILE *archivo_disco, objetos::superBloque s_bloque, fs *sistema){
 	//Agregando el apuntador
-    strcpy(Bloque.b_content[2].b_name, "users.i_txt");
+    strcpy(Bloque.b_content[2].b_name, "users.txt");
     Bloque.b_content[2].b_inodo = sistema->ObtenerNumeroInodo(s_bloque);
 	//Actualizando el bloque root
 	fseek(archivo_disco, s_bloque.s_block_start, SEEK_SET);

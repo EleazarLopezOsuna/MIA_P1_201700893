@@ -2,25 +2,25 @@
 #include <iostream>
 #include <scanner.h>
 #include <parser.h>
-//#include <particioneslist.h>
-//#include <mount.h>
-//#include "Estructuras.h"
+#include <lista.h>
+#include <MOUNT.h>
+#include "objetos.h"
 using namespace std;
 
 
 int main()
 {
 
-    //extern void setSalida(particioneslist::lista * l_general, Estructuras::user_activo * usr);
+    extern void setSalida(lista::list * l_general, objetos::activeUser * usr);
 
 
-    //lista_particiones::nodo_particion * nuevo = (lista_particiones::nodo_particion*)malloc(sizeof (lista_particiones::nodo_particion));
-    //particioneslist::lista * lista_particionesMontadas =(particioneslist::lista*)malloc(sizeof (lista_particionesMontadas));
-    //lista_particionesMontadas->primero = NULL;
-    //lista_particionesMontadas->ultimo = NULL;
+    lista::nodoP * nuevo = (lista::nodoP *)malloc(sizeof (lista::nodoP));
+    lista::list * listapartMontadas =(lista::list*)malloc(sizeof (listapartMontadas));
+    listapartMontadas->first = NULL;
+    listapartMontadas->last = NULL;
 
-    //Estructuras::user_activo * usr_activo = (Estructuras::user_activo*)malloc(sizeof(Estructuras::user_activo));
-    //usr_activo->estado=-1;
+    objetos::activeUser * usr_activo = (objetos::activeUser*)malloc(sizeof(objetos::activeUser));
+    usr_activo->estado=-1;
 
 
     // while para mantener escuchando comandos
@@ -51,14 +51,13 @@ int main()
             //cout<<"\n la entrada es: "<<contenidoLinea<<endl;
 
         yy_scan_string(contenidoLinea);
-        //setSalida(lista_particionesMontadas, usr_activo);
+        setSalida(listapartMontadas, usr_activo);
         yyparse();
 
-/*if(lista_particionesMontadas->primero!= NULL){
-               cout<<"***********************************************"<<endl;
-             cout<<lista_particionesMontadas->primero->path<<endl;
-
-        }*/
+        if(listapartMontadas->first!= NULL){
+            cout << "***********************************************" << endl;
+            cout << listapartMontadas->first->path << endl;
+        }
 
     }
 
